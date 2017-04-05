@@ -1,0 +1,78 @@
+{% extends "header.html" %}
+{% block results %}
+    <div class="left-content">
+      <div class="result-stats">About {{ results|length }} results ({{ time_elapsed }} seconds)</div>
+      
+      <div class="search-ret">
+        <ul class="search-ret-list">
+
+          {% for result in results %}
+          <li class="search-ret-item">
+            <h2 class="item-title">
+              <a href="/details?q={{ result.info_hash }}" title="{{ result.title }}">{{ result.title }}</a>
+            </h2>
+
+            <div class="item-meta-info">
+              <a title="Download using magnet" href="magnet:?xt=urn:btih:{{ result.info_hash }}&amp;dn={{ result.title }}&amp;tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&amp;tr=udp%3A%2F%2Fopen.demonii.com%3A1337&amp;tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&amp;tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce" class="magnet"><i class="fa fa-magnet"></i> Magnet Link</a>
+              Size: <span class="item-meta-info-value">{{ result.size }}</span>
+              Files: <span class="item-meta-info-value">{{ result.files|length }}</span>
+            </div>
+
+            <ul class="item-file-list">
+
+              {% for file in result.files %}
+              <li class="file">
+                <span class="file-icon">
+                  <i class="fa fa-file-archive-o"></i>
+                </span>
+                <span class="file-name">
+                  {{ file.name }}
+                </span>
+                <span class="file-size">
+                  {{ file.size }}
+                </span>
+              </li>
+              {% endfor %}
+
+            </ul>
+          </li>
+          {% endfor %}
+
+        </ul>
+      </div>
+
+      {% if results|length > 10 %}
+      <div class="nav">
+        <nav role="navigation">
+          <ul class="pagination">
+            <li class="button">
+              <a href="/q?={{ query }}/#" class="disabled">« Previous</a>
+            </li>
+            <li class="button">
+              <strong>1</strong>
+            </li>
+            <li class="button">
+              <a href="/q?={{ query }}&amp;p=2">2</a>
+            </li>
+            <li class="button">
+              <a href="/q?={{ query }}&amp;p=3">3</a>
+            </li>
+            
+            <span class="ellipsis">…</span>
+            
+            <li class="button">
+              <a href="/q?={{ query }}&amp;p=100">100</a>
+            </li>
+            <li class="button">
+              <a href="/q?={{ query }}&amp;p=200">200</a>
+            </li>
+            <li class="button">
+              <a href="/q?={{ query }}&amp;p=2">Next »</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+    </div>
+{% endblock %}

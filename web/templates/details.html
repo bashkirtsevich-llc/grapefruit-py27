@@ -1,0 +1,38 @@
+{% extends "header.html" %}
+{% block results %}
+    <div class="torrent-info">
+      <h1 class="torrent-name">{{ title }}</h1>
+      <dl class="torrent-meta-info clearfix">
+        <div class="meta-info clearfix">
+          <div class="meta-info-left">
+            <dt>Size</dt>
+            <dd>{{ size }}</dd>
+            <dt>Files</dt>
+            <dd>{{ files|length }}</dd>
+            <dt>Torrent Hash</dt>
+            <dd>{{ info_hash }}</dd>
+          </div>
+        </div>
+        <dt>Magnet</dt>
+        <dd>
+          <i class="fa fa-magnet"></i> <a title="Magnet Link" href="magnet:?xt=urn:btih:{{ info_hash }}&amp;dn=Debian_5&amp;%3A%2F%2Ftracker.openbittorrent.com%3A80&amp;tr=udp%3A%2F%2Fopen.demonii.com%3A1337&amp;tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&amp;%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce" class="magnet">magnet:?xt=urn:btih:{{ info_hash }}…</a>
+        </dd>
+      </dl>
+      <h2>File List</h2>
+      <table class="torrent-file-list">
+        <tbody>
+        	{% for file in files %}
+          <tr>
+            <td class="file-size">{{ file.size }}</td>
+            <td>
+              <span class="file-icon"><i class="fa fa-file-archive-o"></i></span>
+              <span class="file-name">
+                {{ file.name }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+{% endblock %}
