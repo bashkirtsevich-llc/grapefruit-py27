@@ -18,7 +18,7 @@ class BitTorrentClient(protocol.Protocol):
         self._metadata = {}
 
         self._deferred = defer.Deferred()
-        self._deferred.addCallback(on_metadata_loaded)
+        self._deferred.addCallback(on_metadata_loaded, info_hash)
 
     @staticmethod
     def parseMessage(message):

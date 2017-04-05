@@ -11,7 +11,8 @@ from service.bittorrent.bittorrent import BitTorrentFactory
 log.startLogging(sys.stdout)
 
 
-def print_metadata(metadata):
+def print_metadata(metadata, info_hash):
+    print "Torrent hash:", binascii.hexlify(info_hash)
     print "Torrent metadata:", metadata
 
 
