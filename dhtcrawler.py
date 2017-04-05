@@ -4,10 +4,9 @@
 import sys
 from optparse import OptionParser
 import pymongo
-import utility
+from service.crawler.utility import *
 import datetime
-from torrent_loader import TorrentLoader
-from node import Node
+from service.crawler.node import Node
 from bencode import bdecode
 
 
@@ -40,20 +39,20 @@ def start_crawler(mongodb_uri):
             routing_tables = list(database.routing_tables.find())
 
             for routing_table in routing_tables:
-                routing_table["node_id"] = utility.from_hex_to_byte(routing_table["node_id"])
+                routing_table["node_id"] = from_hex_to_byte(routing_table["node_id"])
                 for bucket in routing_table["routing_table"]:
                     for node in bucket:
-                        node[0] = utility.from_hex_to_byte(node[0])
+                        node[0] = from_hex_to_byte(node[0])
 
             return routing_tables
 
         def handle_save_routing_table(node_id, routing_table, address):
             coll = database.routing_tables
 
-            node_id = utility.from_byte_to_hex(node_id)
+            node_id = from_byte_to_hex(node_id)
             for bucket in routing_table:
                 for node in bucket:
-                    node[0] = utility.from_byte_to_hex(node[0])
+                    node[0] = from_byte_to_hex(node[0])
 
             if coll.find_one({"node_id": node_id}):
                 coll.update({"node_id": node_id}, {"$set": {"routing_table": routing_table}})
@@ -66,47 +65,47 @@ def start_crawler(mongodb_uri):
 
             for bucket in routing_table:
                 for node in bucket:
-                    node[0] = utility.from_hex_to_byte(node[0])
+                    node[0] = from_hex_to_byte(node[0])
 
         def handle_announce_event(info_hash, host, announce_port):
-            print "Announce hash", utility.from_byte_to_hex(info_hash), host, announce_port
+            print "Announce hash", from_byte_to_hex(info_hash), host, announce_port
 
-            coll = database.info_hashes
-
-            coll.insert({
-                "value": utility.from_byte_to_hex(info_hash),
-                "host": host,
-                "port": announce_port,
-                "date": datetime.datetime.utcnow()
-            })
-
-            torrents = database.torrents
-
-            btih = utility.from_byte_to_hex(info_hash)
-
-            if not btih in loaders and not torrents.find_one({"info_hash": btih}):
-                def save_metadata(metadata):
-                    torrents.insert({
-                        "info_hash": btih,
-                        "metadata": bdecode(metadata)
-                    })
-
-                def release_loader():
-                    del loaders[info_hash]
-
-                loader = loaders[btih] = TorrentLoader(host, announce_port, info_hash,
-                                                       on_metadata_loaded=save_metadata,
-                                                       on_finish=release_loader)
-
-                loader.start()
+            # coll = database.info_hashes
+            #
+            # coll.insert({
+            #     "value": from_byte_to_hex(info_hash),
+            #     "host": host,
+            #     "port": announce_port,
+            #     "date": datetime.datetime.utcnow()
+            # })
+            #
+            # torrents = database.torrents
+            #
+            # btih = from_byte_to_hex(info_hash)
+            #
+            # if not btih in loaders and not torrents.find_one({"info_hash": btih}):
+            #     def save_metadata(metadata):
+            #         torrents.insert({
+            #             "info_hash": btih,
+            #             "metadata": bdecode(metadata)
+            #         })
+            #
+            #     def release_loader():
+            #         del loaders[info_hash]
+            #
+            #     loader = loaders[btih] = TorrentLoader(host, announce_port, info_hash,
+            #                                            on_metadata_loaded=save_metadata,
+            #                                            on_finish=release_loader)
+            #
+            #     loader.start()
 
         def handle_get_peers_event(info_hash):
-            print "Get peers", utility.from_byte_to_hex(info_hash)
+            print "Get peers", from_byte_to_hex(info_hash)
 
             coll = database.get_peer_info_hashes
 
             coll.insert({
-                "value": utility.from_byte_to_hex(info_hash),
+                "value": from_byte_to_hex(info_hash),
                 "timestamp": datetime.datetime.utcnow()
             })
 
