@@ -4,9 +4,8 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 
-from service.dht.network import Server
-
 from service.bittorrent.bittorrent import BitTorrentFactory
+from service.dht.server.network import Server
 
 log.startLogging(sys.stdout)
 

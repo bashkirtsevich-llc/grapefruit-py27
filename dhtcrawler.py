@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+import binascii
+import datetime
+
 from pymongo import MongoClient
 
-from service.crawler.utility import *
-from service.crawler.node import Node
-
-import datetime
-import binascii
+from service.dht.crawler.node import Node
 
 
 def start_crawler(mongodb_uri, host, port, node_id=None):
