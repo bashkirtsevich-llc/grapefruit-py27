@@ -46,7 +46,7 @@ def __get_files_size(files):
 def start_server(mongodb_uri, host, port):
     mongo_client = MongoClient(mongodb_uri)
     try:
-        grapefruit = mongo_client.torrents
+        db = mongo_client.grapefruit
 
         app = Flask(__name__, static_url_path="")
 
@@ -61,7 +61,7 @@ def start_server(mongodb_uri, host, port):
 
             start_time = time()
             # Query database
-            results = grapefruit.torrents.find()
+            results = db.torrents.find()
             elapsed_time = time() - start_time
 
             arguments = {
@@ -83,7 +83,7 @@ def start_server(mongodb_uri, host, port):
             query = request.args.get("q")
 
             # Query database
-            result = grapefruit.torrents.find_one({"info_hash": query})
+            result = db.torrents.find_one({"info_hash": query})
 
             if result is not None:
                 arguments = {
