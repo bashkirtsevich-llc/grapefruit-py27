@@ -165,7 +165,7 @@ class DHTProtocol(KRPC):
         self._send_message(response, address)
 
         if self._on_find_nodes is not None:
-            self._on_find_nodes()
+            self._on_find_nodes(target_node_id)
 
     def handle_get_peers_query(self, data, address):
         info_hash = data["a"]["info_hash"]

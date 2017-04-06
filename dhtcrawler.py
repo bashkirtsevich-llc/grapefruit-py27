@@ -14,9 +14,6 @@ def start_crawler(mongodb_uri, host, port, node_id=None):
     try:
         database = client.grapefruit
 
-        def handle_find_nodes_event():
-            print "Find nodes"
-
         def get_routing_tables():
             routing_tables = list(database.routing_tables.find())
 
@@ -47,6 +44,9 @@ def start_crawler(mongodb_uri, host, port, node_id=None):
             for bucket in routing_table:
                 for node in bucket:
                     node[0] = binascii.unhexlify(node[0])
+
+        def handle_find_nodes_event(target_node_id):
+            print "Find nodes"
 
         def handle_announce_event(info_hash, announce_host, announce_port):
             print "Announce hash", binascii.hexlify(info_hash), announce_host, announce_port
