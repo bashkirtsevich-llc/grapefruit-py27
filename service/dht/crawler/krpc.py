@@ -5,12 +5,10 @@ import time
 import random
 import socket
 
-from utility import generate_id
-from utility import encode_nodes
-from utility import get_routing_table_index
-from utility import xor
-from utility import decode_nodes
-from utility import generate_node_id
+from utils import generate_id
+from utils import get_routing_table_index
+from utils import xor
+from ..common_utils import generate_node_id, decode_nodes, encode_nodes
 
 from threading import Lock, Thread
 from config import INITIAL_NODES

@@ -9,7 +9,8 @@ from twisted.internet import defer, reactor, task
 
 from log import Logger
 from protocol import KademliaProtocol
-from utils import deferred_dict, generate_node_id
+from utils import deferred_dict
+from ..common_utils import generate_node_id
 from storage import ForgetfulStorage
 from node import Node
 from crawling import ValueSpiderCrawl

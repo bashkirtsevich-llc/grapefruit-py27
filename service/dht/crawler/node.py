@@ -2,7 +2,7 @@
 # coding=utf-8
 
 from krpc import DHTProtocol
-from utility import generate_node_id
+from ..common_utils import generate_node_id
 
 
 class Node(object):
