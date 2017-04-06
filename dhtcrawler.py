@@ -1,36 +1,19 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import sys
-from optparse import OptionParser
-import pymongo
+from pymongo import MongoClient
+
 from service.crawler.utility import *
-import datetime
 from service.crawler.node import Node
-from bencode import bdecode
+
+import datetime
+import binascii
 
 
-def start_crawler(mongodb_uri):
-    parser = OptionParser(version="0.1", epilog="Crawl DHT network to sniff torrent hashes", description="DHT Crawler")
-    parser.add_option("-H", "--host", dest="server_host", default="0.0.0.0",
-                      help="Local UDP server network address (default: 0.0.0.0)")
-    parser.add_option("-P", "--port", dest="server_port", default=12346,
-                      help="Local UDP server network port (default: 12346)")
-    parser.add_option("-I", "--node_id", dest="node_id", default=None,
-                      help="DHT server local node id")
-    parser.add_option("-F", "--forcibly", dest="forcibly", default=False,
-                      help="Forcibly override stored node configuration (default: False)")
-
-    (opts, args) = parser.parse_args(sys.argv[1:])
-
-    client = pymongo.MongoClient(mongodb_uri)
+def start_crawler(mongodb_uri, host, port, node_id=None):
+    client = MongoClient(mongodb_uri)
     try:
-        database = client.dhtcrawler
-
-        loaders = {}
-
-        def handle_ping_event():
-            print "Receive ping"
+        database = client.grapefruit
 
         def handle_find_nodes_event():
             print "Find nodes"
@@ -39,81 +22,50 @@ def start_crawler(mongodb_uri):
             routing_tables = list(database.routing_tables.find())
 
             for routing_table in routing_tables:
-                routing_table["node_id"] = from_hex_to_byte(routing_table["node_id"])
+                routing_table["node_id"] = binascii.unhexlify(routing_table["node_id"])
                 for bucket in routing_table["routing_table"]:
                     for node in bucket:
-                        node[0] = from_hex_to_byte(node[0])
+                        node[0] = binascii.unhexlify(node[0])
 
             return routing_tables
 
-        def handle_save_routing_table(node_id, routing_table, address):
+        def handle_save_routing_table(local_node_id, routing_table, address):
             coll = database.routing_tables
 
-            node_id = from_byte_to_hex(node_id)
+            local_node_id = binascii.hexlify(local_node_id)
             for bucket in routing_table:
                 for node in bucket:
-                    node[0] = from_byte_to_hex(node[0])
+                    node[0] = binascii.hexlify(node[0])
 
-            if coll.find_one({"node_id": node_id}):
-                coll.update({"node_id": node_id}, {"$set": {"routing_table": routing_table}})
+            if coll.find_one({"node_id": local_node_id}):
+                coll.update({"node_id": local_node_id}, {"$set": {"routing_table": routing_table}})
             else:
                 coll.insert({
-                    "node_id": node_id,
-                    "address": list(address),
+                    "node_id": local_node_id,
                     "routing_table": routing_table
                 })
 
             for bucket in routing_table:
                 for node in bucket:
-                    node[0] = from_hex_to_byte(node[0])
+                    node[0] = binascii.unhexlify(node[0])
 
-        def handle_announce_event(info_hash, host, announce_port):
-            print "Announce hash", from_byte_to_hex(info_hash), host, announce_port
-
-            # coll = database.info_hashes
-            #
-            # coll.insert({
-            #     "value": from_byte_to_hex(info_hash),
-            #     "host": host,
-            #     "port": announce_port,
-            #     "date": datetime.datetime.utcnow()
-            # })
-            #
-            # torrents = database.torrents
-            #
-            # btih = from_byte_to_hex(info_hash)
-            #
-            # if not btih in loaders and not torrents.find_one({"info_hash": btih}):
-            #     def save_metadata(metadata):
-            #         torrents.insert({
-            #             "info_hash": btih,
-            #             "metadata": bdecode(metadata)
-            #         })
-            #
-            #     def release_loader():
-            #         del loaders[info_hash]
-            #
-            #     loader = loaders[btih] = TorrentLoader(host, announce_port, info_hash,
-            #                                            on_metadata_loaded=save_metadata,
-            #                                            on_finish=release_loader)
-            #
-            #     loader.start()
+        def handle_announce_event(info_hash, announce_host, announce_port):
+            print "Announce hash", binascii.hexlify(info_hash), announce_host, announce_port
 
         def handle_get_peers_event(info_hash):
-            print "Get peers", from_byte_to_hex(info_hash)
+            print "Get peers", binascii.hexlify(info_hash)
 
             coll = database.get_peer_info_hashes
 
             coll.insert({
-                "value": from_byte_to_hex(info_hash),
+                "value": binascii.hexlify(info_hash),
                 "timestamp": datetime.datetime.utcnow()
             })
 
         arguments = {
-            "node_id": opts.node_id,
+            "node_id": node_id,
             "routing_table": None,
-            "address": (opts.server_host, opts.server_port),
-            "on_ping": handle_ping_event,
+            "address": (host, port),
             "on_find_nodes": handle_find_nodes_event,
             "on_get_peers": handle_get_peers_event,
             "on_announce": handle_announce_event,
@@ -122,13 +74,8 @@ def start_crawler(mongodb_uri):
 
         routing_tables = get_routing_tables()
 
-        if len(routing_tables) > 0 and not opts.forcibly:
-            for routing_table in routing_tables:
-                arguments["node_id"] = routing_table["node_id"]
-                arguments["routing_table"] = routing_table["routing_table"]
-                arguments["address"] = tuple(routing_table["address"])
-
-                break
+        if routing_tables and routing_tables[0]["node_id"] == node_id:
+            arguments["routing_table"] = routing_tables[0]["routing_table"]
 
         nodes = []
 
