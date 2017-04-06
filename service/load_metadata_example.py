@@ -40,7 +40,7 @@ def bootstrap_done(found, server, info_hash):
 
 
 def start_dht_server(ip):
-    info_hash = binascii.unhexlify("04bc6703517e6f0ea13fd2561b36145af3ef35f1")
+    info_hash = binascii.unhexlify("774CE8D72FEDCDDC290AD7506AFB36126BCAF837")
 
     server = Server(id=binascii.unhexlify("cd2e6673b9f2a21cad1e605fe5fb745b9f7a214d"))
     server.listen(12346)

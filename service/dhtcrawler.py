@@ -76,11 +76,6 @@ def start_crawler(mongodb_uri, host, port, node_id=None):
         if routing_tables and routing_tables[0]["node_id"] == node_id:
             arguments["routing_table"] = routing_tables[0]["routing_table"]
 
-        nodes = []
-
-        node = Node(**arguments)
-        node.protocol.start()
-
-        nodes.append(node)
+        Node(**arguments).protocol.start()
     finally:
         client.close()
