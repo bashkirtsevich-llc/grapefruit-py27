@@ -13,6 +13,9 @@ def sha1(s):
 def generate_node_id():
     return sha1(uuid4().bytes)
 
+def generate_peer_id():
+    return "-GC0000-" + generate_node_id()[:8]
+
 
 def decode_nodes(message):
     result = []
