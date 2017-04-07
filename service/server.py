@@ -58,16 +58,16 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
             if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is not None:
                 db.torrents.insert_one(metadata)
 
-        def bootstrap_done(searcher):
+        def start_crawler_node(try_load_metadata):
             def handle_announce_event(info_hash, announce_host, announce_port):
                 store_info_hash(hexlify(info_hash))
 
-                searcher(info_hash, store_torrent_metadata)
+                try_load_metadata(info_hash, store_torrent_metadata)
 
             def handle_get_peers_event(info_hash):
                 store_info_hash(hexlify(info_hash))
 
-                searcher(info_hash, store_torrent_metadata)
+                try_load_metadata(info_hash, store_torrent_metadata)
 
             arguments = {
                 "node_id": crawler_node_id,
@@ -86,6 +86,6 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
             Node(**arguments).protocol.start()
 
         metadata_loader("router.bittorrent.com", 6881, server_port, node_id=server_node_id,
-                        on_bootstrap_done=bootstrap_done)
+                        on_bootstrap_done=start_crawler_node)
     finally:
         mongo_client.close()
