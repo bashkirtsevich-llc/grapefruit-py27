@@ -22,7 +22,8 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
             args = {
                 "info_hash": hexlify(info_hash),
                 "name": metadata["name"],
-                "files": metadata["files"]
+                "files": metadata["files"] if "files" in metadata else [
+                    {"path": [metadata["name"]], "length": metadata["length"]}]
             }
 
             on_metadata_loaded(args)
