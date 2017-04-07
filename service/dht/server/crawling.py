@@ -68,6 +68,7 @@ class ValueSpiderCrawl(SpiderCrawl):
         # keep track of the single nearest node without value - per
         # section 2.3 so we can set the key there if found
         self.nearestWithoutValue = NodeHeap(self.node, 1)
+        self.values = []
 
     def find(self):
         """
@@ -80,7 +81,6 @@ class ValueSpiderCrawl(SpiderCrawl):
         Handle the result of an iteration in _find.
         """
         toremove = []
-        foundValues = []
 
         for peerid, response in responses.items():
             response = RPCFindResponse(response)
@@ -88,7 +88,7 @@ class ValueSpiderCrawl(SpiderCrawl):
             if not response.happened():
                 toremove.append(peerid)
             elif response.hasValues():
-                foundValues.extend(response.getValues())
+                self.values.extend(response.getValues())
             else:
                 peer = self.nearest.getNodeById(peerid)
                 self.nearestWithoutValue.push(peer)
@@ -96,10 +96,11 @@ class ValueSpiderCrawl(SpiderCrawl):
 
         self.nearest.remove(toremove)
 
-        if len(foundValues) > 0:
-            return list(set(foundValues))  # return unique list of values
-        elif self.nearest.allBeenContacted():
-            return None  # not found!
+        if self.nearest.allBeenContacted():
+            if self.values:
+                return list(set(self.values))  # return unique list of values
+            else:
+                return None  # not found!
         else:
             return self.find()
 
