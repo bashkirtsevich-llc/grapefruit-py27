@@ -73,11 +73,11 @@ class DHTProtocol(KRPC):
         self.node_id = node_id
         self.routing_table = routing_table
 
-        self._on_ping = kwargs["on_ping"] if "on_ping" in kwargs else None
-        self._on_find_nodes = kwargs["on_find_nodes"] if "on_find_nodes" in kwargs else None
-        self._on_get_peers = kwargs["on_get_peers"] if "on_get_peers" in kwargs else None
-        self._on_announce = kwargs["on_announce"] if "on_announce" in kwargs else None
-        self._on_save_routing_table = kwargs["on_save_routing_table"] if "on_save_routing_table" in kwargs else None
+        self._on_ping = kwargs.get("on_ping", None)
+        self._on_find_nodes = kwargs.get("on_find_nodes", None)
+        self._on_get_peers = kwargs.get("on_get_peers", None)
+        self._on_announce = kwargs.get("on_announce", None)
+        self._on_save_routing_table = kwargs.get("on_save_routing_table", None)
 
         self.routing_table_lock = Lock()
 
