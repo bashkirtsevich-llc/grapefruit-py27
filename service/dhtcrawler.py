@@ -12,10 +12,10 @@ from service.dht.crawler.node import Node
 def start_crawler(mongodb_uri, host, port, node_id=None):
     client = MongoClient(mongodb_uri)
     try:
-        database = client.grapefruit
+        db = client.grapefruit
 
         def get_routing_tables():
-            routing_tables = list(database.routing_tables.find())
+            routing_tables = list(db.routing_tables.find())
 
             for routing_table in routing_tables:
                 routing_table["node_id"] = binascii.unhexlify(routing_table["node_id"])
@@ -26,7 +26,7 @@ def start_crawler(mongodb_uri, host, port, node_id=None):
             return routing_tables
 
         def handle_save_routing_table(local_node_id, routing_table, address):
-            coll = database.routing_tables
+            coll = db.routing_tables
 
             local_node_id = binascii.hexlify(local_node_id)
             for bucket in routing_table:
@@ -54,7 +54,7 @@ def start_crawler(mongodb_uri, host, port, node_id=None):
         def handle_get_peers_event(info_hash):
             print "Get peers", binascii.hexlify(info_hash)
 
-            coll = database.get_peer_info_hashes
+            coll = db.get_peer_info_hashes
 
             coll.insert({
                 "value": binascii.hexlify(info_hash),
