@@ -23,7 +23,7 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
             return tables
 
         def store_routing_table(local_node_id, routing_table, address):
-            coll = db.routing_tables
+            coll = db.crawler_route
 
             local_node_id = hexlify(local_node_id)
             for bucket in routing_table:
