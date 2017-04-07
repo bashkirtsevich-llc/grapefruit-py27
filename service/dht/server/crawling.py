@@ -87,9 +87,11 @@ class ValueSpiderCrawl(SpiderCrawl):
 
             if not response.happened():
                 toremove.append(peerid)
+
             elif response.hasValues():
                 self.values.extend(response.getValues())
-            else:
+
+            if response.hasNodeList():
                 peer = self.nearest.getNodeById(peerid)
                 self.nearestWithoutValue.push(peer)
                 self.nearest.push(response.getNodeList())
@@ -149,14 +151,16 @@ class RPCFindResponse(object):
         return self.response[0]
 
     def hasValues(self):
-        return isinstance(self.response[1], dict) and "values" in self.response[1] and len(
-            self.response[1]["values"]) > 0
+        return isinstance(self.response[1], dict) and "values" in self.response[1]
 
     def getValues(self):
         return decode_values(self.response[1]["values"])
 
     def getToken(self):
         return self.response[1]["token"]
+
+    def hasNodeList(self):
+        return isinstance(self.response[1], dict) and "nodes" in self.response[1]
 
     def getNodeList(self):
         """
