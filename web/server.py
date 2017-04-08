@@ -45,7 +45,7 @@ def start_server(mongodb_uri, host, port):
             start_time = time()
             # Query database
             results = db.torrents.find()
-            elapsed_time = time() - start_time
+            elapsed_time = round(time() - start_time, 3)
 
             arguments = {
                 "query": query,
