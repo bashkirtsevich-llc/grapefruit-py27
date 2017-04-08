@@ -55,7 +55,7 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
                 })
 
         def store_torrent_metadata(metadata):
-            if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is not None:
+            if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is None:
                 db.torrents.insert_one(metadata)
 
         def start_crawler_node(try_load_metadata):
