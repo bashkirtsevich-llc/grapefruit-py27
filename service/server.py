@@ -60,15 +60,17 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
 
         def start_crawler_node(try_load_metadata):
             def handle_announce_event(info_hash, announce_host, announce_port):
-                store_info_hash(hexlify(info_hash))
+                torrent_hash = hexlify(info_hash)
+                store_info_hash(torrent_hash)
 
-                if db.torrents.find_one({"info_hash": hexlify(info_hash)}) is None:
+                if db.torrents.find_one({"info_hash": torrent_hash}) is None:
                     try_load_metadata(info_hash, store_torrent_metadata)
 
             def handle_get_peers_event(info_hash):
-                store_info_hash(hexlify(info_hash))
+                torrent_hash = hexlify(info_hash)
+                store_info_hash(torrent_hash)
 
-                if db.torrents.find_one({"info_hash": hexlify(info_hash)}) is None:
+                if db.torrents.find_one({"info_hash": torrent_hash}) is None:
                     try_load_metadata(info_hash, store_torrent_metadata)
 
             arguments = {
