@@ -6,23 +6,6 @@ from flask import request
 
 from time import time
 
-"""
-MongoDB collection format:
-{
-   "files":[
-      {
-         "path":[
-            "filename"
-         ],
-         "length":123
-      },
-      ...
-   ],
-   "name":"torrent name",
-   "info_hash":"hex_info_hash_lower_case"
-}
-"""
-
 
 def __sizeof_fmt(num, suffix="B"):
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
