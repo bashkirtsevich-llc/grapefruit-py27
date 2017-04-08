@@ -40,11 +40,11 @@ def start_server(mongodb_uri, host, port):
         @app.route("/search")
         def search():
             query = request.args.get("q")
-            page = request.args.get("p", default=1)
+            page = request.args.get("p", default=0)
 
             start_time = time()
             # Query database
-            results = db.torrents.find()
+            results = db.torrents.find().skip(page * 10).limit(10)
             elapsed_time = round(time() - start_time, 3)
 
             arguments = {
