@@ -71,9 +71,10 @@ def start_server(mongodb_uri, host, port):
         @app.route("/details")
         def details():
             query = request.args.get("q")
+            info_hash = request.args.get("t")
 
             # Query database
-            result = db.torrents.find_one({"info_hash": query})
+            result = db.torrents.find_one({"info_hash": info_hash})
 
             if result is not None:
                 arguments = {

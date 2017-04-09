@@ -9,7 +9,7 @@
           {% for result in results %}
           <li class="search-ret-item">
             <h2 class="item-title">
-              <a href="/details?q={{ result.info_hash }}" title="{{ result.title }}">{{ result.title }}</a>
+              <a href="/details?q={{ query }}&t={{ result.info_hash }}" title="{{ result.title }}">{{ result.title }}</a>
             </h2>
 
             <div class="item-meta-info">
