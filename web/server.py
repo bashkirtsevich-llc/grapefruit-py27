@@ -38,7 +38,7 @@ def start_server(mongodb_uri, host, port):
 
         @app.route("/")
         def show_index():
-            return render_template("index.html")
+            return render_template("index.html", torrents_count=db.torrents.count())
 
         @app.route("/search")
         def search():
