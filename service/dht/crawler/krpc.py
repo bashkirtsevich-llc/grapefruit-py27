@@ -203,9 +203,6 @@ class DHTProtocol(KRPC):
         if self._on_announce is not None:
             self._on_announce(info_hash, host, port)
 
-    def handle_ping_response(self, data, address):
-        pass
-
     def handle_find_node_response(self, data, address):
         node_message = data["r"]["nodes"]
         nodes = decode_nodes(node_message)
