@@ -6,8 +6,6 @@ from flask import request
 
 from time import time
 
-import re
-
 
 def __sizeof_fmt(num, suffix="B"):
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
@@ -33,6 +31,9 @@ def start_server(mongodb_uri, host, port):
     try:
         db = mongo_client.grapefruit
 
+        if "$**_text" not in db.torrents.index_information():
+            db.torrents.createIndex({"$**": "text"})
+
         app = Flask(__name__, static_url_path="")
 
         @app.route("/")
@@ -47,13 +48,10 @@ def start_server(mongodb_uri, host, port):
             start_time = time()
             # Query database
             results = db.torrents.find(
-                {"name":
-                    re.compile(
-                        "|".join(
-                            filter(lambda it: len(it) > 0, query.split(" "))
-                        ), re.IGNORECASE
-                    )
-                }).skip(page * 10).limit(10)
+                {"$text": {"$search": query}},
+                {"score": {"$meta": "textScore"}}
+            ).skip(page * 10).limit(10)
+
             elapsed_time = round(time() - start_time, 3)
 
             arguments = {
