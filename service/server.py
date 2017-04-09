@@ -44,15 +44,10 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
 
         def store_info_hash(info_hash):
             coll = db.hashes
-
-            if coll.find_one({"info_hash": info_hash}):
-                coll.update({"info_hash": info_hash},
-                            {"$set": {"updated": datetime.utcnow()}})
-            else:
-                coll.insert({
-                    "info_hash": info_hash,
-                    "added": datetime.utcnow()
-                })
+            coll.insert({
+                "info_hash": info_hash,
+                "timestamp": datetime.utcnow()
+            })
 
         def store_torrent_metadata(metadata):
             if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is None:
