@@ -82,7 +82,8 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
             if routing_tables and routing_tables[0]["node_id"] == crawler_node_id:
                 arguments["routing_table"] = routing_tables[0]["routing_table"]
 
-            Node(**arguments).protocol.start()
+            node = Node(**arguments)
+            node.protocol.start()
 
         metadata_loader("router.bittorrent.com", 6881, server_port, node_id=server_node_id,
                         on_bootstrap_done=start_crawler_node)
