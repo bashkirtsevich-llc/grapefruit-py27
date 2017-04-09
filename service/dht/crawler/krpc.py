@@ -211,12 +211,6 @@ class DHTProtocol(KRPC):
         nodes = decode_nodes(node_message)
         self.add_nodes_to_routing_table(nodes)
 
-    def handle_get_peers_response(self, data, address):
-        pass
-
-    def handle_announce_peer_response(self, data, address):
-        pass
-
     def handle(self, data, address):
         try:
             data = bdecode(data)
@@ -238,9 +232,7 @@ class DHTProtocol(KRPC):
                     query_handle_function[data["q"]](data, address)
 
             elif msg_type == "r":
-                if "token" in data["r"]:
-                    self.handle_get_peers_response(data, address)
-                elif "nodes" in data["r"]:
+                if "nodes" in data["r"]:
                     self.handle_find_node_response(data, address)
 
         except KeyError:
