@@ -16,8 +16,7 @@ from struct import pack
 
 from bencode import bencode, bdecode, BTFailure
 
-from ..common_utils import encode_values, encode_nodes
-from service.dht.server.utils import generate_token, verify_token
+from utils import generate_token, verify_token, encode_values, encode_nodes
 
 
 class KademliaProtocol(RPCProtocol):

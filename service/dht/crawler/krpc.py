@@ -8,7 +8,9 @@ import socket
 from utils import generate_id
 from utils import get_routing_table_index
 from utils import xor
-from ..common_utils import generate_node_id, decode_nodes, encode_nodes
+from utils import encode_nodes
+from utils import decode_nodes
+from ..common_utils import generate_node_id
 
 from threading import Lock, Thread
 from config import INITIAL_NODES
@@ -27,33 +29,13 @@ class KRPC(object):
 
     def _send(self, data, address):
         try:
-            start = time.time()
-
             self.__socket.sendto(data, address)
-
-            end = time.time()
-
-            expected_end = start + (len(data) / self.__max_bytes_per_sec)
-
-            if expected_end > end:
-                time.sleep(abs(expected_end - end))
         except:
             pass
 
     def _receive(self):
         try:
-            start = time.time()
-
-            result = self.__socket.recvfrom(65536)
-
-            end = time.time()
-
-            expected_end = start + (len(result) / self.__max_bytes_per_sec)
-
-            if expected_end > end:
-                time.sleep(abs(expected_end - end))
-
-            return result
+            return self.__socket.recvfrom(65536)
         except:
             return None
 
