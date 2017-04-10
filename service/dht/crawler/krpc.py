@@ -22,20 +22,41 @@ class KRPC(object):
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__socket.bind(address)
 
-        self.__max_bytes_per_sec = 5 * 1024 * 1024  # 5 MBps
+        self._latency = 0.001
+        self._bandwidth = 5 * 1024 * 1024  # 5 MBps
+        self._bytes_recv = 0
+        self._bytes_recv = 0
+        self._time_created = time.time()
 
     def __del__(self):
         self.__socket.close()
 
     def _send(self, data, address):
         try:
+            self._bytes_recv += len(data)
+
+            connectionDuration = time.time() - self._time_created
+            requiredDuration = self._bytes_recv / self._bandwidth
+            time.sleep(max(requiredDuration - connectionDuration, self._latency))
+
             self.__socket.sendto(data, address)
         except:
             pass
 
     def _receive(self):
         try:
-            return self.__socket.recvfrom(65536)
+            result = self.__socket.recvfrom(65536)
+
+            if result:
+                data, _ = result
+
+                self._bytes_recv += len(data)
+
+                connectionDuration = time.time() - self._time_created
+                requiredDuration = self._bytes_recv / self._bandwidth
+                time.sleep(max(requiredDuration - connectionDuration, self._latency))
+
+            return result
         except:
             return None
 
