@@ -46,7 +46,7 @@ def start_server(mongodb_uri, host, port):
             items = list(results)
 
             arguments = {
-                "query": "",
+                "query": query,
                 "page": page,
                 "total_pages": len(items) / results_per_page,
                 "total_count": len(items),
