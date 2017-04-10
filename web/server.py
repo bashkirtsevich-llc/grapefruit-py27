@@ -17,9 +17,9 @@ def __sizeof_fmt(num, suffix="B"):
     return "%.1f %s%s" % (num, "Y", suffix)
 
 
-def __get_files_list(files):
+def __get_files_list(files, first_ten=False):
     return map(lambda f: {"name": reduce(lambda r, e: r + e, f["path"], ""),
-                          "size": __sizeof_fmt(f["length"])}, files)
+                          "size": __sizeof_fmt(f["length"])}, files[:10] if first_ten else files)
 
 
 def __get_files_size(files):
@@ -62,7 +62,8 @@ def start_server(mongodb_uri, host, port):
                     "info_hash": item["info_hash"],
                     "title": item["name"],
                     "size": __get_files_size(item["files"]),
-                    "files": __get_files_list(item["files"])
+                    "files": __get_files_list(item["files"], first_ten=True),
+                    "lots_of_files": len(item["files"]) > 10
                 }, results)
             }
 
