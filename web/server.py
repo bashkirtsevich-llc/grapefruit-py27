@@ -113,7 +113,7 @@ def start_server(mongodb_uri, host, port):
 
                     return render_template("details.html", **arguments)
                 else:
-                    abort(401)
+                    abort(404)
             else:
                 return redirect("/")
 
