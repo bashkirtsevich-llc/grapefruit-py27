@@ -37,7 +37,6 @@ def start_server(mongodb_uri, host, port):
         app = Flask(__name__, static_url_path="")
 
         results_per_page = 10
-        files_per_result = 10
 
         @app.route("/")
         def show_index():
@@ -57,7 +56,7 @@ def start_server(mongodb_uri, host, port):
                     "title": item["name"],
                     "size": __get_files_size(item["files"]),
                     "files": __get_files_list(item["files"], first_ten=True),
-                    "lots_of_files": len(item["files"]) > files_per_result
+                    "files_count": len(item["files"])
                 }, items[:results_per_page])
             }
 
