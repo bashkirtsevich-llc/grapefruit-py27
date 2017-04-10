@@ -18,7 +18,7 @@ def __sizeof_fmt(num, suffix="B"):
 
 
 def __get_files_list(files, first_ten=False):
-    return map(lambda f: {"name": reduce(lambda r, e: r + e, f["path"], ""),
+    return map(lambda f: {"name": reduce(lambda r, e: r + ("/" if r else "") + e, f["path"], ""),
                           "size": __sizeof_fmt(f["length"])}, files[:10] if first_ten else files)
 
 
