@@ -24,7 +24,7 @@ class KRPC(object):
 
         self._latency = 0.001
         self._bandwidth = 5 * 1024 * 1024  # 5 MBps
-        self._bytes_recv = 0
+        self._bytes_send = 0
         self._bytes_recv = 0
         self._time_created = time.time()
 
@@ -33,10 +33,10 @@ class KRPC(object):
 
     def _send(self, data, address):
         try:
-            self._bytes_recv += len(data)
+            self._bytes_send += len(data)
 
             connectionDuration = time.time() - self._time_created
-            requiredDuration = self._bytes_recv / self._bandwidth
+            requiredDuration = self._bytes_send / self._bandwidth
             time.sleep(max(requiredDuration - connectionDuration, self._latency))
 
             self.__socket.sendto(data, address)
