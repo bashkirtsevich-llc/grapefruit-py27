@@ -45,33 +45,41 @@
         </ul>
       </div>
 
-      {% if results|length > 10 %}
+      {% if total_pages > 0 %}
       <div class="nav">
         <nav role="navigation">
           <ul class="pagination">
             <li class="button">
+              {% if page > 0 %}
+              <a href="/q?={{ query }}&p={{ page - 1 }}">« Previous</a>
+              {% else %}
               <a href="/q?={{ query }}/#" class="disabled">« Previous</a>
+              {% endif %}
             </li>
+            <!--<li class="button">-->
+              <!--<strong>1</strong>-->
+            <!--</li>-->
+            <!--<li class="button">-->
+              <!--<a href="/q?={{ query }}&p=2">2</a>-->
+            <!--</li>-->
+            <!--<li class="button">-->
+              <!--<a href="/q?={{ query }}&p=3">3</a>-->
+            <!--</li>-->
+            <!---->
+            <!--<span class="ellipsis">…</span>-->
+            <!---->
+            <!--<li class="button">-->
+              <!--<a href="/q?={{ query }}&p=100">100</a>-->
+            <!--</li>-->
+            <!--<li class="button">-->
+              <!--<a href="/q?={{ query }}&p=200">200</a>-->
+            <!--</li>-->
             <li class="button">
-              <strong>1</strong>
-            </li>
-            <li class="button">
-              <a href="/q?={{ query }}&amp;p=2">2</a>
-            </li>
-            <li class="button">
-              <a href="/q?={{ query }}&amp;p=3">3</a>
-            </li>
-            
-            <span class="ellipsis">…</span>
-            
-            <li class="button">
-              <a href="/q?={{ query }}&amp;p=100">100</a>
-            </li>
-            <li class="button">
-              <a href="/q?={{ query }}&amp;p=200">200</a>
-            </li>
-            <li class="button">
-              <a href="/q?={{ query }}&amp;p=2">Next »</a>
+              {% if page >= total_pages %}
+              <a href="/q?={{ query }}/#" class="disabled">Next »</a>
+              {% else %}
+              <a href="/q?={{ query }}&p={{ page + 1 }}">Next »</a>
+              {% endif %}
             </li>
           </ul>
         </nav>

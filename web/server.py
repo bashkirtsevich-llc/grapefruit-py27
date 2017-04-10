@@ -36,22 +36,28 @@ def start_server(mongodb_uri, host, port):
 
         app = Flask(__name__, static_url_path="")
 
+        results_per_page = 10
+        files_per_result = 10
+
         @app.route("/")
         def show_index():
             return render_template("index.html", torrents_count=db.torrents.count())
 
         def render_results(query, page, elapsed_time, results):
+            items = list(results)
+
             arguments = {
                 "query": "",
                 "page": page,
+                "total_pages": len(items) / results_per_page,
                 "time_elapsed": round(elapsed_time, 3),
                 "results": map(lambda item: {
                     "info_hash": item["info_hash"],
                     "title": item["name"],
                     "size": __get_files_size(item["files"]),
                     "files": __get_files_list(item["files"], first_ten=True),
-                    "lots_of_files": len(item["files"]) > 10
-                }, results)
+                    "lots_of_files": len(item["files"]) > files_per_result
+                }, items)
             }
 
             return render_template("results.html", **arguments)
@@ -66,7 +72,7 @@ def start_server(mongodb_uri, host, port):
             results = db.torrents.find(
                 {"$text": {"$search": query}},
                 {"score": {"$meta": "textScore"}}
-            ).skip(page * 10).limit(10)
+            ).skip(page * results_per_page).limit(results_per_page)
 
             elapsed_time = time() - start_time
 
@@ -78,7 +84,7 @@ def start_server(mongodb_uri, host, port):
 
             start_time = time()
             # Query database
-            results = db.torrents.find().skip(page * 10).limit(10)
+            results = db.torrents.find().skip(page * results_per_page).limit(results_per_page)
 
             elapsed_time = time() - start_time
 
