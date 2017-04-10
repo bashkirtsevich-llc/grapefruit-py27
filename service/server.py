@@ -49,7 +49,7 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
                 "timestamp": datetime.utcnow()
             })
 
-        def store_torrent_metadata(metadata):
+        def store_metadata(metadata):
             if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is None:
                 db.torrents.insert_one(metadata)
 
@@ -59,14 +59,14 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
                 store_info_hash(torrent_hash)
 
                 if db.torrents.find_one({"info_hash": torrent_hash}) is None:
-                    try_load_metadata(info_hash, store_torrent_metadata)
+                    try_load_metadata(info_hash, store_metadata)
 
             def handle_get_peers_event(info_hash):
                 torrent_hash = hexlify(info_hash)
                 store_info_hash(torrent_hash)
 
                 if db.torrents.find_one({"info_hash": torrent_hash}) is None:
-                    try_load_metadata(info_hash, store_torrent_metadata)
+                    try_load_metadata(info_hash, store_metadata)
 
             arguments = {
                 "node_id": crawler_node_id,
