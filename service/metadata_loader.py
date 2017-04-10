@@ -26,7 +26,7 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
                     {"path": [metadata["name"]], "length": metadata["length"]}]
             }
 
-            on_metadata_loaded(args)
+            reactor.callInThread(on_metadata_loaded, args)
 
     def peers_found(peers, info_hash, on_metadata_loaded):
         for peer in peers:
@@ -58,8 +58,9 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
             if on_bootstrap_done is not None:
                 assert callable(on_bootstrap_done)
 
-                on_bootstrap_done(
-                    lambda info_hash, on_metadata_loaded: get_peers(server, info_hash, on_metadata_loaded))
+                reactor.callInThread(on_bootstrap_done,
+                                     lambda info_hash, on_metadata_loaded: get_peers(server, info_hash,
+                                                                                     on_metadata_loaded))
 
     def start_dht_server(ip):
         server = Server(id=kwargs.get("node_id", generate_node_id()))
