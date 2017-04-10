@@ -72,7 +72,7 @@ def start_server(mongodb_uri, host, port):
             results = db.torrents.find(
                 {"$text": {"$search": query}},
                 {"score": {"$meta": "textScore"}}
-            ).skip(page * results_per_page).limit(results_per_page)
+            ).skip(page * results_per_page)
 
             elapsed_time = time() - start_time
 
@@ -84,7 +84,7 @@ def start_server(mongodb_uri, host, port):
 
             start_time = time()
             # Query database
-            results = db.torrents.find().skip(page * results_per_page).limit(results_per_page)
+            results = db.torrents.find().skip(page * results_per_page)
 
             elapsed_time = time() - start_time
 
