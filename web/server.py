@@ -1,4 +1,4 @@
-from pymongo import MongoClient, TEXT
+from pymongo import MongoClient
 
 from flask import Flask
 from flask import render_template
