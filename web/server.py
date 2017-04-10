@@ -50,6 +50,7 @@ def start_server(mongodb_uri, host, port):
                 "query": "",
                 "page": page,
                 "total_pages": len(items) / results_per_page,
+                "total_count": len(items),
                 "time_elapsed": round(elapsed_time, 3),
                 "results": map(lambda item: {
                     "info_hash": item["info_hash"],
@@ -57,7 +58,7 @@ def start_server(mongodb_uri, host, port):
                     "size": __get_files_size(item["files"]),
                     "files": __get_files_list(item["files"], first_ten=True),
                     "lots_of_files": len(item["files"]) > files_per_result
-                }, items)
+                }, items[:results_per_page])
             }
 
             return render_template("results.html", **arguments)
