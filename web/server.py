@@ -40,6 +40,22 @@ def start_server(mongodb_uri, host, port):
         def show_index():
             return render_template("index.html", torrents_count=db.torrents.count())
 
+        def render_results(query, page, elapsed_time, results):
+            arguments = {
+                "query": "",
+                "page": page,
+                "time_elapsed": round(elapsed_time, 3),
+                "results": map(lambda item: {
+                    "info_hash": item["info_hash"],
+                    "title": item["name"],
+                    "size": __get_files_size(item["files"]),
+                    "files": __get_files_list(item["files"], first_ten=True),
+                    "lots_of_files": len(item["files"]) > 10
+                }, results)
+            }
+
+            return render_template("results.html", **arguments)
+
         @app.route("/search")
         def search():
             query = request.args.get("q")
@@ -52,22 +68,9 @@ def start_server(mongodb_uri, host, port):
                 {"score": {"$meta": "textScore"}}
             ).skip(page * 10).limit(10)
 
-            elapsed_time = round(time() - start_time, 3)
+            elapsed_time = time() - start_time
 
-            arguments = {
-                "query": query,
-                "page": page,
-                "time_elapsed": elapsed_time,
-                "results": map(lambda item: {
-                    "info_hash": item["info_hash"],
-                    "title": item["name"],
-                    "size": __get_files_size(item["files"]),
-                    "files": __get_files_list(item["files"], first_ten=True),
-                    "lots_of_files": len(item["files"]) > 10
-                }, results)
-            }
-
-            return render_template("results.html", **arguments)
+            return render_results(query, page, elapsed_time, results)
 
         @app.route("/latest")
         def latest():
@@ -77,22 +80,9 @@ def start_server(mongodb_uri, host, port):
             # Query database
             results = db.torrents.find().skip(page * 10).limit(10)
 
-            elapsed_time = round(time() - start_time, 3)
+            elapsed_time = time() - start_time
 
-            arguments = {
-                "query": "",
-                "page": page,
-                "time_elapsed": elapsed_time,
-                "results": map(lambda item: {
-                    "info_hash": item["info_hash"],
-                    "title": item["name"],
-                    "size": __get_files_size(item["files"]),
-                    "files": __get_files_list(item["files"], first_ten=True),
-                    "lots_of_files": len(item["files"]) > 10
-                }, results)
-            }
-
-            return render_template("results.html", **arguments)
+            return render_results("", page, elapsed_time, results)
 
         @app.route("/details")
         def details():
