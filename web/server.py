@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-from flask import Flask
+from flask import Flask, redirect
 from flask import render_template
 from flask import request
 
@@ -67,16 +67,19 @@ def start_server(mongodb_uri, host, port):
             query = request.args.get("q")
             page = request.args.get("p", default=0)
 
-            start_time = time()
-            # Query database
-            results = db.torrents.find(
-                {"$text": {"$search": query}},
-                {"score": {"$meta": "textScore"}}
-            ).skip(page * results_per_page)
+            if query:
+                start_time = time()
+                # Query database
+                results = db.torrents.find(
+                    {"$text": {"$search": query}},
+                    {"score": {"$meta": "textScore"}}
+                ).skip(page * results_per_page)
 
-            elapsed_time = time() - start_time
+                elapsed_time = time() - start_time
 
-            return render_results(query, page, elapsed_time, results)
+                return render_results(query, page, elapsed_time, results)
+            else:
+                return redirect("/")
 
         @app.route("/latest")
         def latest():
@@ -95,21 +98,24 @@ def start_server(mongodb_uri, host, port):
             query = request.args.get("q")
             info_hash = request.args.get("t")
 
-            # Query database
-            result = db.torrents.find_one({"info_hash": info_hash})
+            if info_hash:
+                # Query database
+                result = db.torrents.find_one({"info_hash": info_hash})
 
-            if result is not None:
-                arguments = {
-                    "query": query,
-                    "title": result["name"],
-                    "size": __get_files_size(result["files"]),
-                    "info_hash": result["info_hash"],
-                    "files": __get_files_list(result["files"])
-                }
+                if result is not None:
+                    arguments = {
+                        "query": query,
+                        "title": result["name"],
+                        "size": __get_files_size(result["files"]),
+                        "info_hash": result["info_hash"],
+                        "files": __get_files_list(result["files"])
+                    }
 
-                return render_template("details.html", **arguments)
+                    return render_template("details.html", **arguments)
+                else:
+                    return "Not found", 404
             else:
-                return "Not found", 404
+                return redirect("/")
 
         app.run(host=host, port=port)
     finally:
