@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-from flask import Flask, redirect
+from flask import Flask, redirect, abort
 from flask import render_template
 from flask import request
 
@@ -113,7 +113,7 @@ def start_server(mongodb_uri, host, port):
 
                     return render_template("details.html", **arguments)
                 else:
-                    return "Not found", 404
+                    abort(401)
             else:
                 return redirect("/")
 
