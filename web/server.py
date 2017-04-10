@@ -69,6 +69,31 @@ def start_server(mongodb_uri, host, port):
 
             return render_template("results.html", **arguments)
 
+        @app.route("/latest")
+        def latest():
+            page = request.args.get("p", default=0)
+
+            start_time = time()
+            # Query database
+            results = db.torrents.find().skip(page * 10).limit(10)
+
+            elapsed_time = round(time() - start_time, 3)
+
+            arguments = {
+                "query": "",
+                "page": page,
+                "time_elapsed": elapsed_time,
+                "results": map(lambda item: {
+                    "info_hash": item["info_hash"],
+                    "title": item["name"],
+                    "size": __get_files_size(item["files"]),
+                    "files": __get_files_list(item["files"], first_ten=True),
+                    "lots_of_files": len(item["files"]) > 10
+                }, results)
+            }
+
+            return render_template("results.html", **arguments)
+
         @app.route("/details")
         def details():
             query = request.args.get("q")

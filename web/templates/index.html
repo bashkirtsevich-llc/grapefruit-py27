@@ -20,7 +20,7 @@
         <h2>Magnet &amp; Torrent Search Engine</h2>
         
         <div class="recent-link">
-          <a href="recent">Recent Torrents</a>
+          <a href="latest">Latest {% if torrents_count > 100 %}100{% else %}{{ torrents_count }}{% endif %} Torrents</a>
         </div>
       </div>
     </div>
