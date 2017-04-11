@@ -60,20 +60,22 @@ def __handle_get_peers_event(db, db_lock, info_hash, try_load_metadata):
     torrent_hash = hexlify(info_hash)
     __store_info_hash(db, db_lock, torrent_hash)
 
-    if db.torrents.find_one({"info_hash": torrent_hash}) is None:
-        try_load_metadata(info_hash,
-                          lambda metadata: __store_metadata(
-                              db, db_lock, metadata))
+    with db_lock:
+        if db.torrents.find_one({"info_hash": torrent_hash}) is None:
+            try_load_metadata(info_hash,
+                              lambda metadata: __store_metadata(
+                                  db, db_lock, metadata))
 
 
 def __handle_announce_event(db, db_lock, info_hash, announce_host, announce_port, try_load_metadata):
     torrent_hash = hexlify(info_hash)
     __store_info_hash(db, db_lock, torrent_hash)
 
-    if db.torrents.find_one({"info_hash": torrent_hash}) is None:
-        try_load_metadata(info_hash,
-                          lambda metadata: __store_metadata(
-                              db, db_lock, metadata))
+    with db_lock:
+        if db.torrents.find_one({"info_hash": torrent_hash}) is None:
+            try_load_metadata(info_hash,
+                              lambda metadata: __store_metadata(
+                                  db, db_lock, metadata))
 
 
 def __start_crawler_node(db, db_lock, crawler_port, crawler_node_id, try_load_metadata):
