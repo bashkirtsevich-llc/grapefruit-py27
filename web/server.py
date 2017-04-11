@@ -42,10 +42,11 @@ def start_server(mongodb_uri, host, port):
         def show_index():
             return render_template("index.html", torrents_count=db.torrents.count())
 
-        def render_results(query, page, elapsed_time, results):
+        def render_results(source_url, query, page, elapsed_time, results):
             items = list(results)
 
             arguments = {
+                "source_url": source_url,
                 "query": query,
                 "page": page,
                 "total_pages": len(items) / results_per_page,
@@ -77,7 +78,7 @@ def start_server(mongodb_uri, host, port):
 
                 elapsed_time = time() - start_time
 
-                return render_results(query, page, elapsed_time, results)
+                return render_results("/search", query, page, elapsed_time, results)
             else:
                 return redirect("/")
 
@@ -91,7 +92,7 @@ def start_server(mongodb_uri, host, port):
 
             elapsed_time = time() - start_time
 
-            return render_results("", page, elapsed_time, results)
+            return render_results("/latest", "", page, elapsed_time, results)
 
         @app.route("/details")
         def details():

@@ -51,9 +51,9 @@
           <ul class="pagination">
             <li class="button">
               {% if page > 0 %}
-              <a href="/q?={{ query }}&p={{ page - 1 }}">« Previous</a>
+              <a href="{{ source_url }}?q={{ query }}&p={{ page - 1 }}">« Previous</a>
               {% else %}
-              <a href="/q?={{ query }}/#" class="disabled">« Previous</a>
+              <a href="{{ source_url }}?q={{ query }}/#" class="disabled">« Previous</a>
               {% endif %}
             </li>
             <!--<li class="button">-->
@@ -76,9 +76,9 @@
             <!--</li>-->
             <li class="button">
               {% if page >= total_pages %}
-              <a href="/q?={{ query }}/#" class="disabled">Next »</a>
+              <a href="{{ source_url }}?q={{ query }}/#" class="disabled">Next »</a>
               {% else %}
-              <a href="/q?={{ query }}&p={{ page + 1 }}">Next »</a>
+              <a href="{{ source_url }}?q={{ query }}&p={{ page + 1 }}">Next »</a>
               {% endif %}
             </li>
           </ul>
