@@ -29,14 +29,15 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
             reactor.callInThread(on_metadata_loaded, args)
 
     def peers_found(peers, info_hash, on_metadata_loaded):
-        for peer in peers:
-            factory = BitTorrentFactory(info_hash=info_hash,
-                                        peer_id=kwargs.get("peer_id", generate_peer_id()),
-                                        on_metadata_loaded=lambda metadata, info_hash: metadata_loaded(
-                                            metadata, info_hash, on_metadata_loaded))
+        if peers:
+            for peer in peers:
+                factory = BitTorrentFactory(info_hash=info_hash,
+                                            peer_id=kwargs.get("peer_id", generate_peer_id()),
+                                            on_metadata_loaded=lambda metadata, info_hash: metadata_loaded(
+                                                metadata, info_hash, on_metadata_loaded))
 
-            ip, port = peer
-            reactor.connectTCP(ip, port, factory)
+                ip, port = peer
+                reactor.connectTCP(ip, port, factory)
 
     def get_peers(server, info_hash, on_metadata_loaded):
         server.get_peers(info_hash).addCallback(peers_found, info_hash, on_metadata_loaded)
