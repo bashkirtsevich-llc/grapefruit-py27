@@ -51,7 +51,7 @@
           <ul class="pagination">
             <li class="button">
               {% if page > 1 %}
-              <a href="{{ source_url }}?q={{ query }}&p={{ page - 1 }}">« Previous</a>
+              <a href="{{ source_url }}?{% if query %}q={{ query }}&{% endif %}p={{ page - 1 }}">« Previous</a>
               {% else %}
               <a href="{{ source_url }}?q={{ query }}/#" class="disabled">« Previous</a>
               {% endif %}
@@ -61,7 +61,7 @@
               {% if n + 1 == page %}
               <strong>{{ n + 1}}</strong>
               {% else %}
-              <a href="{{ source_url }}?q={{ query }}&p={{ n + 1 }}">{{ n + 1 }}</a>
+              <a href="{{ source_url }}?{% if query %}q={{ query }}&{% endif %}p={{ n + 1 }}">{{ n + 1 }}</a>
               {% endif %}
             </li>
             <!--<span class="ellipsis">…</span>-->
@@ -70,7 +70,7 @@
               {% if page >= total_pages %}
               <a href="{{ source_url }}?q={{ query }}/#" class="disabled">Next »</a>
               {% else %}
-              <a href="{{ source_url }}?q={{ query }}&p={{ page + 1 }}">Next »</a>
+              <a href="{{ source_url }}?{% if query %}q={{ query }}&{% endif %}p={{ page + 1 }}">Next »</a>
               {% endif %}
             </li>
           </ul>
