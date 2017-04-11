@@ -32,7 +32,7 @@ def start_server(mongodb_uri, host, port):
         db = mongo_client.grapefruit
 
         # Create this index manually:
-        # db.torrents.createIndex({"$**": "text"})
+        # db.torrents.createIndex( {"$**": "text"}, {"weights": { name: 3, path: 2 }} )
 
         app = Flask(__name__, static_url_path="")
 
