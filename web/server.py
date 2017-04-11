@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, DESCENDING
 
 from flask import Flask, redirect, abort
 from flask import render_template
@@ -58,7 +58,7 @@ def start_server(mongodb_uri, host, port):
                     "size": __get_files_size(item["files"]),
                     "files": __get_files_list(item["files"], first_ten=True),
                     "files_count": len(item["files"])
-                }, items[:results_per_page])
+                }, items[page * results_per_page: page * results_per_page + results_per_page])
             }
 
             return render_template("results.html", **arguments)
@@ -66,7 +66,7 @@ def start_server(mongodb_uri, host, port):
         @app.route("/search")
         def search():
             query = request.args.get("q")
-            page = request.args.get("p", default=0)
+            page = int(request.args.get("p", default=0))
 
             if query:
                 start_time = time()
@@ -74,7 +74,7 @@ def start_server(mongodb_uri, host, port):
                 results = db.torrents.find(
                     {"$text": {"$search": query}},
                     {"score": {"$meta": "textScore"}}
-                ).skip(page * results_per_page)
+                )
 
                 elapsed_time = time() - start_time
 
@@ -84,11 +84,11 @@ def start_server(mongodb_uri, host, port):
 
         @app.route("/latest")
         def latest():
-            page = request.args.get("p", default=0)
+            page = int(request.args.get("p", default=0))
 
             start_time = time()
             # Query database
-            results = db.torrents.find().skip(page * results_per_page)
+            results = db.torrents.find().sort("_id", DESCENDING).limit(100)
 
             elapsed_time = time() - start_time
 
