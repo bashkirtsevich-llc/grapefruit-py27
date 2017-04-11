@@ -74,7 +74,7 @@ def start_server(mongodb_uri, host, port):
                 results = db.torrents.find(
                     {"$text": {"$search": query}},
                     {"score": {"$meta": "textScore"}}
-                )
+                ).sort([("score", {"$meta": "textScore"})])
 
                 elapsed_time = time() - start_time
 
