@@ -33,9 +33,7 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
             factory = BitTorrentFactory(info_hash=info_hash,
                                         peer_id=kwargs.get("peer_id", generate_peer_id()),
                                         on_metadata_loaded=lambda metadata, info_hash: metadata_loaded(
-                                            metadata,
-                                            info_hash,
-                                            on_metadata_loaded))
+                                            metadata, info_hash, on_metadata_loaded))
 
             ip, port = peer
             reactor.connectTCP(ip, port, factory)
