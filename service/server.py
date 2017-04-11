@@ -42,12 +42,11 @@ def __store_routing_table(db, db_lock, local_node_id, routing_table, address):
                 node[0] = unhexlify(node[0])
 
 
-def __store_info_hash(db, db_lock, info_hash):
-    with db_lock:
-        db.hashes.insert({
-            "info_hash": info_hash,
-            "timestamp": datetime.utcnow()
-        })
+def __store_info_hash(db, info_hash):
+    db.hashes.insert({
+        "info_hash": info_hash,
+        "timestamp": datetime.utcnow()
+    })
 
 
 def __store_metadata(db, db_lock, metadata):
@@ -57,10 +56,10 @@ def __store_metadata(db, db_lock, metadata):
 
 
 def __handle_get_peers_event(db, db_lock, info_hash, try_load_metadata):
-    torrent_hash = hexlify(info_hash)
-    __store_info_hash(db, db_lock, torrent_hash)
-
     with db_lock:
+        torrent_hash = hexlify(info_hash)
+        __store_info_hash(db, torrent_hash)
+
         if db.torrents.find_one({"info_hash": torrent_hash}) is None:
             try_load_metadata(info_hash,
                               lambda metadata: __store_metadata(
@@ -68,10 +67,10 @@ def __handle_get_peers_event(db, db_lock, info_hash, try_load_metadata):
 
 
 def __handle_announce_event(db, db_lock, info_hash, announce_host, announce_port, try_load_metadata):
-    torrent_hash = hexlify(info_hash)
-    __store_info_hash(db, db_lock, torrent_hash)
-
     with db_lock:
+        torrent_hash = hexlify(info_hash)
+        __store_info_hash(db, torrent_hash)
+
         if db.torrents.find_one({"info_hash": torrent_hash}) is None:
             try_load_metadata(info_hash,
                               lambda metadata: __store_metadata(
