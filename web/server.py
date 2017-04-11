@@ -49,7 +49,7 @@ def start_server(mongodb_uri, host, port):
                 "source_url": source_url,
                 "query": query,
                 "page": page,
-                "total_pages": len(items) / results_per_page,
+                "total_pages": len(items) / results_per_page + 1,
                 "total_count": len(items),
                 "time_elapsed": round(elapsed_time, 3),
                 "results": map(lambda item: {
@@ -58,7 +58,7 @@ def start_server(mongodb_uri, host, port):
                     "size": __get_files_size(item["files"]),
                     "files": __get_files_list(item["files"], first_ten=True),
                     "files_count": len(item["files"])
-                }, items[page * results_per_page: page * results_per_page + results_per_page])
+                }, items[(page - 1) * results_per_page: (page - 1) * results_per_page + results_per_page])
             }
 
             return render_template("results.html", **arguments)
@@ -66,7 +66,7 @@ def start_server(mongodb_uri, host, port):
         @app.route("/search")
         def search():
             query = request.args.get("q")
-            page = int(request.args.get("p", default=0))
+            page = max(int(request.args.get("p", default=1)), 1)
 
             if query:
                 start_time = time()
@@ -84,7 +84,7 @@ def start_server(mongodb_uri, host, port):
 
         @app.route("/latest")
         def latest():
-            page = int(request.args.get("p", default=0))
+            page = max(int(request.args.get("p", default=1)), 1)
 
             start_time = time()
             # Query database

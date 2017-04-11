@@ -45,35 +45,27 @@
         </ul>
       </div>
 
-      {% if total_pages > 0 %}
+      {% if total_pages > 1 %}
       <div class="nav">
         <nav role="navigation">
           <ul class="pagination">
             <li class="button">
-              {% if page > 0 %}
+              {% if page > 1 %}
               <a href="{{ source_url }}?q={{ query }}&p={{ page - 1 }}">« Previous</a>
               {% else %}
               <a href="{{ source_url }}?q={{ query }}/#" class="disabled">« Previous</a>
               {% endif %}
             </li>
-            <!--<li class="button">-->
-              <!--<strong>1</strong>-->
-            <!--</li>-->
-            <!--<li class="button">-->
-              <!--<a href="/q?={{ query }}&p=2">2</a>-->
-            <!--</li>-->
-            <!--<li class="button">-->
-              <!--<a href="/q?={{ query }}&p=3">3</a>-->
-            <!--</li>-->
-            <!---->
+            {% for n in range(total_pages) %}
+            <li class="button">
+              {% if n + 1 == page %}
+              <strong>{{ n + 1}}</strong>
+              {% else %}
+              <a href="{{ source_url }}?q={{ query }}&p={{ n + 1 }}">{{ n + 1 }}</a>
+              {% endif %}
+            </li>
             <!--<span class="ellipsis">…</span>-->
-            <!---->
-            <!--<li class="button">-->
-              <!--<a href="/q?={{ query }}&p=100">100</a>-->
-            <!--</li>-->
-            <!--<li class="button">-->
-              <!--<a href="/q?={{ query }}&p=200">200</a>-->
-            <!--</li>-->
+            {% endfor %}
             <li class="button">
               {% if page >= total_pages %}
               <a href="{{ source_url }}?q={{ query }}/#" class="disabled">Next »</a>
