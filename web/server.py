@@ -1,4 +1,4 @@
-from pymongo import MongoClient, DESCENDING
+from pymongo import MongoClient, DESCENDING, TEXT
 
 from flask import Flask, redirect, abort
 from flask import render_template
@@ -31,8 +31,10 @@ def start_server(mongodb_uri, host, port):
     try:
         db = mongo_client.grapefruit
 
-        # Create this index manually:
-        # db.torrents.createIndex( {"$**": "text"}, {"weights": { name: 3, path: 2 }} )
+        if "$**_text" not in db.torrents.index_information():
+            db.torrents.create_index([("$**", TEXT)], name="$**_text",
+                                     weights={"name": 3, "path": 2},
+                                     default_language="english")
 
         app = Flask(__name__, static_url_path="")
 
