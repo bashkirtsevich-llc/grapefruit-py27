@@ -6,6 +6,9 @@ from flask import Flask, redirect, abort
 from flask import render_template
 from flask import request
 
+import urllib
+from markupsafe import Markup
+
 from time import time
 
 
@@ -43,6 +46,14 @@ def start_server(mongodb_uri, host, port):
         app = Flask(__name__, static_url_path="")
 
         results_per_page = 10
+
+        @app.template_filter('urlencode')
+        def urlencode_filter(s):
+            if type(s) == 'Markup':
+                s = s.unescape()
+            s = s.encode('utf8')
+            s = urllib.quote_plus(s)
+            return Markup(s)
 
         @app.errorhandler(404)
         def page_not_found(e):

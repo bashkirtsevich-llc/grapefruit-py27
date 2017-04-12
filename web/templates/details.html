@@ -15,7 +15,7 @@
         </div>
         <dt>Magnet</dt>
         <dd>
-          <i class="fa fa-magnet"></i> <a title="Magnet Link" href="magnet:?xt=urn:btih:{{ info_hash }}&amp;dn=Debian_5&amp;%3A%2F%2Ftracker.openbittorrent.com%3A80&amp;tr=udp%3A%2F%2Fopen.demonii.com%3A1337&amp;tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&amp;%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce" class="magnet">magnet:?xt=urn:btih:{{ info_hash }}…</a>
+          <i class="fa fa-magnet"></i> <a title="Magnet Link" href="magnet:?xt=urn:btih:{{ info_hash }}&dn={{ title | urlencode }}&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce" class="magnet">magnet:?xt=urn:btih:{{ info_hash }}…</a>
         </dd>
       </dl>
       <h2>File List</h2>
