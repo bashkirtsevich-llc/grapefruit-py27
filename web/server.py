@@ -40,6 +40,10 @@ def start_server(mongodb_uri, host, port):
 
         results_per_page = 10
 
+        @app.errorhandler(404)
+        def page_not_found(e):
+            return render_template('404.html'), 404
+
         @app.route("/")
         def show_index():
             return render_template("index.html", torrents_count=db.torrents.count())
