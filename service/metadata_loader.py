@@ -1,5 +1,6 @@
 from binascii import hexlify
 from twisted.internet import reactor
+from threading import Lock
 
 from bittorrent.bittorrent import BitTorrentFactory
 from dht.server.network import Server
@@ -14,6 +15,8 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
     :param kwargs: node_id, peer_id, on_bootstrap_done, on_bootstrap_failed
     :return: None
     """
+
+    server_lock = Lock()
 
     def metadata_loaded(metadata, info_hash, on_metadata_loaded):
         if on_metadata_loaded is not None:
@@ -40,7 +43,8 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
                 reactor.connectTCP(ip, port, factory)
 
     def get_peers(server, info_hash, on_metadata_loaded):
-        server.get_peers(info_hash).addCallback(peers_found, info_hash, on_metadata_loaded)
+        with server_lock:
+            server.get_peers(info_hash).addCallback(peers_found, info_hash, on_metadata_loaded)
 
     def bootstrap_done(found, server):
         if len(found) == 0:
