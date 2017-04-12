@@ -197,7 +197,7 @@ body {
     height: 100%;
 }
 a {
-    color: #12c;
+    color: #2f82c2;
     text-decoration: none;
     outline: none;
 }
@@ -567,11 +567,11 @@ nav[role="navigation"] {
 .item-meta-info .magnet,
 .item-meta-info .thunder {
     margin-right: 5px;
-    border-bottom: 1px dotted #12c;
+    border-bottom: 1px dotted #2f82c2;
 }
 .item-meta-info .magnet:hover,
 .item-meta-info .thunder:hover {
-    border-bottom: 1px solid #12c;
+    border-bottom: 1px solid #2f82c2;
     text-decoration: none;
 }
 .right-content {
@@ -662,7 +662,7 @@ nav[role="navigation"] {
 }
 .torrent-meta-info .magnet:hover,
 .torrent-meta-info .thunder:hover {
-    border-bottom: 1px solid #12c;
+    border-bottom: 1px solid #2f82c2;
     text-decoration: none;
 }
 .torrent-meta-info dt {
@@ -764,7 +764,7 @@ div.widgets_logo109059 {
 }
 div.mctitle a:hover,
 div.mgline:hover .mctitle a {
-    color: #12c!important;
+    color: #2f82c2!important;
 }
 #M200304Composite109021,
 #M200304Composite109058 {
