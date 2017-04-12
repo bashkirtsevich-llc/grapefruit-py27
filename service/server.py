@@ -110,12 +110,12 @@ def start_server(mongodb_uri, crawler_port, server_port, crawler_node_id=None, s
 
         metadata_loader("router.bittorrent.com", 6881, server_port,
                         node_id=server_node_id,
-                        on_bootstrap_done=lambda cb: __start_crawler_node(**{
-                            "try_load_metadata": cb,
-                            "db": db,
-                            "db_lock": db_lock,
-                            "crawler_port": crawler_port,
-                            "crawler_node_id": crawler_node_id
-                        }))
+                        on_bootstrap_done=lambda cb: __start_crawler_node(
+                            try_load_metadata=cb,
+                            db=db,
+                            db_lock=db_lock,
+                            crawler_port=crawler_port,
+                            crawler_node_id=crawler_node_id)
+                        )
     finally:
         mongodb_client.close()
