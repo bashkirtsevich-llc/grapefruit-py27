@@ -1,5 +1,7 @@
 from pymongo import MongoClient, DESCENDING, TEXT
 
+from threading import Lock
+
 from flask import Flask, redirect, abort
 from flask import render_template
 from flask import request
@@ -30,6 +32,8 @@ def start_server(mongodb_uri, host, port):
     mongo_client = MongoClient(mongodb_uri)
     try:
         db = mongo_client.grapefruit
+
+        db_lock = Lock()
 
         if "$**_text" not in db.torrents.index_information():
             db.torrents.create_index([("$**", TEXT)], name="$**_text",
@@ -77,10 +81,11 @@ def start_server(mongodb_uri, host, port):
             if query:
                 start_time = time()
                 # Query database
-                results = db.torrents.find(
-                    {"$text": {"$search": query}},
-                    {"score": {"$meta": "textScore"}}
-                ).sort([("score", {"$meta": "textScore"})])
+                with db_lock:
+                    results = db.torrents.find(
+                        {"$text": {"$search": query}},
+                        {"score": {"$meta": "textScore"}}
+                    ).sort([("score", {"$meta": "textScore"})])
 
                 elapsed_time = time() - start_time
 
@@ -94,7 +99,8 @@ def start_server(mongodb_uri, host, port):
 
             start_time = time()
             # Query database
-            results = db.torrents.find().sort("_id", DESCENDING).limit(100)
+            with db_lock:
+                results = db.torrents.find().sort("_id", DESCENDING).limit(100)
 
             elapsed_time = time() - start_time
 
@@ -107,7 +113,8 @@ def start_server(mongodb_uri, host, port):
 
             if info_hash:
                 # Query database
-                result = db.torrents.find_one({"info_hash": info_hash})
+                with db_lock:
+                    result = db.torrents.find_one({"info_hash": info_hash})
 
                 if result is not None:
                     arguments = {
@@ -124,6 +131,6 @@ def start_server(mongodb_uri, host, port):
             else:
                 return redirect("/")
 
-        app.run(host=host, port=port)
+        app.run(host=host, port=port, threaded=True)
     finally:
         mongo_client.close()
