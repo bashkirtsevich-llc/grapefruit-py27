@@ -346,6 +346,8 @@ h1 {
     border-bottom: 1px solid #dbdbdb;
     padding: 20px 10%;
     background-color: #f1f1f1;
+    position: fixed;
+    width: 100%;
 }
 .header-content {
     height: 40px;
@@ -529,6 +531,7 @@ nav[role="navigation"] {
     margin-right: 20px;
     padding-left: 8px;
     padding-bottom: 15px;
+    margin-top: 85px;
 }
 .left-content .banner {
     margin-bottom: 10px;
@@ -650,7 +653,7 @@ nav[role="navigation"] {
 .torrent-info {
     font-size: 14px;
     line-height: 26px;
-    padding-top: 10px;
+    padding-top: 85px;
 }
 .torrent-info h2 {
     font-size: 16px;
