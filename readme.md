@@ -1,12 +1,23 @@
 # Grapefruit torrents search engine
 ## Overview
-Bittorrent [DHT-network](https://en.wikipedia.org/wiki/Distributed_hash_table) sniffer based on [kademlia](https://en.wikipedia.org/wiki/Kademlia) protocol. 
+Bittorrent [DHT-network](https://en.wikipedia.org/wiki/Distributed_hash_table) crawler based on [kademlia](https://en.wikipedia.org/wiki/Kademlia) protocol. 
 
 After bootstraping, service collect and ping all nodes in response queries thereby extend routing table.
 When some outer node send request with torrent ```info_hash```(eg ```get_peers``` or ```announce```), service will store info in mongodb ```hashes``` collection.
 
 When ```info_hash``` is received, service trying to find peers in bittorrent network and request torrent metadata such as torrent ```name```, torrent ```files``` and store into ```torrents``` collection.
+## Running
+Grapefruit crawler can be run by executing ```start_grapefruit.sh```. Script will start MongoDB service and exec http server for comfortable navigation in torrents database. After starting you can open URL [http://localhost:8081/](http://localhost:8081/) and work with database.
 
+Other files, such as ```start_dhtserver.sh``` and ```start_webserver.sh``` can be used for starting each service separatley.
+### Configure services
+In ```config.py``` file you can configure some server options, such as:
+* MongoDB connection URL
+* web server ip address (```0.0.0.0``` allows to access to server from network, ```127.0.0.1``` — access only from localhost) and port (default ```8081```, you can use other)
+* dht-crawler port — is a outer DHT-crawler UDP port, whitch will be listen for incoming queries
+* dht-server port — outer UDP port, whitch will be used for handling metadata loading
+
+**Warning**, ```dht-crawler port``` should be differ from ```dht-server port```.
 ## MongoDB structure
 ### “torrents” collection
 * Structure:
