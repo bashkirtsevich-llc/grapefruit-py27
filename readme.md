@@ -6,6 +6,17 @@ After bootstraping, service collect and ping all nodes in response queries there
 When some outer node send request with torrent ```info_hash```(eg ```get_peers``` or ```announce```), service will store info in mongodb ```hashes``` collection.
 
 When ```info_hash``` is received, service trying to find peers in bittorrent network and request torrent metadata such as torrent ```name```, torrent ```files``` and store into ```torrents``` collection.
+## Requirements
+Grapefruit required python libraries such as [```twisted matrix```](https://twistedmatrix.com/trac/) and ```pymongo```. Web-server required [```flask microframework```](http://flask.pocoo.org/).
+
+You can use ```pip``` for install requirements:
+```shell
+pip install pymongo
+pip install Twisted
+pip install Flask
+```
+Thats all, I hope.
+
 ## Running
 Grapefruit crawler can be run by executing ```start_grapefruit.sh```. Script will start MongoDB service and exec http server for comfortable navigation in torrents database. After starting you can open URL [http://localhost:8081/](http://localhost:8081/) and work with database.
 
@@ -22,14 +33,16 @@ In ```config.py``` file you can configure some server options, such as:
 ### “torrents” collection
 * Structure:
 ```json
-{
-   "files":[
-      {
-         "path":[
-            "folder", "filename.ext"
+{  
+   "files":[  
+      {  
+         "path":[  
+            "folder",
+            "filename.ext"
          ],
          "length":123
       },
+
    ],
    "name":"torrent name",
    "info_hash":"0123456789abcdefabcd0123456789abcdefabcd"
@@ -37,24 +50,57 @@ In ```config.py``` file you can configure some server options, such as:
 ```
 * Full text wildcard index:
 ``` json
-{                                        
-        "v" : 2,                         
-        "key" : {                        
-                "_fts" : "text",         
-                "_ftsx" : 1              
-        },                               
-        "name" : "$**_text",             
-        "ns" : "grapefruit.torrents",    
-        "weights" : {                    
-                "$**" : 1,               
-                "name" : 3,              
-                "path" : 2               
-        },                               
-        "default_language" : "english",  
-        "language_override" : "language",
-        "textIndexVersion" : 3           
-}                                        
+{  
+   "v":2,
+   "key":{  
+      "_fts":"text",
+      "_ftsx":1
+   },
+   "name":"$**_text",
+   "ns":"grapefruit.torrents",
+   "weights":{  
+      "$**":1,
+      "name":3,
+      "path":2
+   },
+   "default_language":"english",
+   "language_override":"language",
+   "textIndexVersion":3
+}                                      
 ```
+### “crawler_route” collection
+* Structure
+```json
+{  
+   "routing_table":[  
+      [  
+         "0123456789abcdefabcd0123456789abcdefabcd",
+         [  
+            "1.2.3.4",
+            5678
+         ]
+      ],
+      [  
+         "123456789abcdefabcd0123456789abcdefabcde",
+         [  
+            "9.10.11.12",
+            1314
+         ]
+      ]
+   ],
+   "node_id":"23456789abcdefabcd0123456789abcdefabcdef"
+}
+```
+This collection contains routing tables for spyder crawler. Using for quick bootstrap after startup.
+### “hashes” collection
+* Structure
+```json
+{  
+   "timestamp":ISODate("2017-04-09..."),
+   "info_hash":"0123456789abcdefabcd0123456789abcdefabcd"
+}
+```
+This collection can be usefull for analytics.
 ## Internals
 ### “service” folder
 #### Metadata loading
