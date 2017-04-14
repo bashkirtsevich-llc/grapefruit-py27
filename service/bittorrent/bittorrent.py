@@ -23,7 +23,10 @@ class BitTorrentClient(protocol.Protocol):
     @staticmethod
     def parseMessage(message):
         # Return message code and message data
-        return (unpack("B", message[:1])[0], message[1:])
+        if message:
+            return (unpack("B", message[:1])[0], message[1:])
+        else:
+            return None
 
     def sendExtendedMessage(self, message_id, message_data):
         buf = pack("BB", 20, message_id) + bencode(message_data)
@@ -96,7 +99,9 @@ class BitTorrentClient(protocol.Protocol):
                 msg_len = unpack("!I", self._buffer[:4])[0]
 
                 if len(self._buffer) >= msg_len + 4:
-                    self.handleMessage(*self.parseMessage(self._buffer[4: msg_len + 4]))
+                    message = self.parseMessage(self._buffer[4: msg_len + 4])
+                    if message:
+                        self.handleMessage(*message)
 
                     self._buffer = self._buffer[msg_len + 4:]
                 else:
