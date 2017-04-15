@@ -13,7 +13,7 @@ from utils import decode_nodes
 from ..common_utils import generate_node_id
 
 from threading import Lock, Thread
-from config import INITIAL_NODES
+from config import INITIAL_NODES, UDP_SERVER_BANDWIDTH
 from bencode import bencode, bdecode
 
 
@@ -23,7 +23,7 @@ class KRPC(object):
         self.__socket.bind(address)
 
         self._latency = 0.001
-        self._bandwidth = 5 * 1024 * 1024  # 5 MBps
+        self._bandwidth = UDP_SERVER_BANDWIDTH
         self._bytes_send = 0
         self._bytes_recv = 0
         self._time_created = time.time()
