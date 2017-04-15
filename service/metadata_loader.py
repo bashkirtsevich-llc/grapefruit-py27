@@ -40,7 +40,7 @@ def metadata_loader(bootstrap_host, bootstrap_port, port, **kwargs):
                                                 metadata, info_hash, on_metadata_loaded))
 
                 ip, port = peer
-                reactor.connectTCP(ip, port, factory)
+                reactor.connectTCP(ip, port, factory, timeout=10)
 
     def get_peers(server, info_hash, on_metadata_loaded):
         with server_lock:
