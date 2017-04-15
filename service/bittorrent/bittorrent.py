@@ -5,10 +5,11 @@ from binascii import unhexlify
 from bencode import bencode, bdecode, decode_dict
 from time import sleep
 from hashlib import sha1
-from twisted.internet import protocol, reactor, defer
+from twisted.internet import protocol, defer
+from twisted.protocols import policies
 
 
-class BitTorrentClient(protocol.Protocol):
+class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
     def __init__(self, info_hash, peer_id, on_metadata_loaded):
         self._info_hash = info_hash
         self._peer_id = peer_id
@@ -35,6 +36,9 @@ class BitTorrentClient(protocol.Protocol):
 
     def handleMessage(self, msg_code, msg_data):
         if msg_code == 20:
+            # If he send extended message, we can extend connection time
+            self.resetTimeout()
+
             # Extended handshake
             if ord(msg_data[0]) == 0:
                 hs_data = bdecode(msg_data[1:])
@@ -72,10 +76,13 @@ class BitTorrentClient(protocol.Protocol):
                     if len(metadata) == r["total_size"]:
                         if sha1(metadata).digest() == self._info_hash:
                             self._deferred.callback(bdecode(metadata))
-                        else:
-                            self.transport.loseConnection()
+
+                        # Abort connection anyway
+                        self.transport.abortConnection()
 
     def connectionMade(self):
+        # Set connection timeout in 10 seconds (after 10 seconds idle connection will be aborted)
+        self.setTimeout(10)
         # Send handshake
         bp = list("BitTorrent protocol")
         self.transport.write(pack("B19c", 19, *bp))
@@ -106,6 +113,9 @@ class BitTorrentClient(protocol.Protocol):
                     self._buffer = self._buffer[msg_len + 4:]
                 else:
                     break
+
+    def timeoutConnection(self):
+        self.transport.abortConnection()
 
 
 class BitTorrentFactory(protocol.ClientFactory):
