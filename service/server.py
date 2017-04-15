@@ -51,8 +51,16 @@ def __store_info_hash(db, info_hash):
 
 def __store_metadata(db, db_lock, metadata):
     with db_lock:
-        if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is None:
-            db.torrents.insert_one(metadata)
+        item = {
+            "info_hash": metadata["info_hash"],
+            "name": metadata["name"],
+            "files": map(lambda f: {"path": f["path"],
+                                    "length": f["length"]},
+                         metadata["files"])
+        }
+
+        if db.torrents.find_one({"info_hash": item["info_hash"]}) is None:
+            db.torrents.insert_one(item)
 
 
 def __handle_get_peers_event(db, db_lock, info_hash, try_load_metadata):
