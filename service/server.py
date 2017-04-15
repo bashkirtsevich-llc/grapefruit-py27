@@ -5,8 +5,6 @@ from threading import Lock
 from metadata_loader import metadata_loader
 from dht.crawler.node import Node
 
-import collections
-
 
 def __get_routing_tables(db, db_lock):
     with db_lock:
@@ -51,21 +49,10 @@ def __store_info_hash(db, info_hash):
     })
 
 
-def __encode_utf8(data):
-    if isinstance(data, basestring):
-        return data.encode('utf-8')
-    elif isinstance(data, collections.Mapping):
-        return dict(map(__encode_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(__encode_utf8, data))
-    else:
-        return data
-
-
 def __store_metadata(db, db_lock, metadata):
     with db_lock:
         if db.torrents.find_one({"info_hash": metadata["info_hash"]}) is None:
-            db.torrents.insert_one(__encode_utf8(metadata))
+            db.torrents.insert_one(metadata)
 
 
 def __handle_get_peers_event(db, db_lock, info_hash, try_load_metadata):
