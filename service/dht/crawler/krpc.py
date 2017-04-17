@@ -255,9 +255,16 @@ class DHTProtocol(KRPC):
             nodes.append([self.node_id, self._get_sock_name()])
             self.add_nodes_to_routing_table(nodes)
 
+        last_save_routing_table = time.time()
+
         while True:
             self.find_nodes_using_routing_table()
-            self.save_routing_table()
+
+            time_stamp = time.time()
+            if time_stamp - last_save_routing_table > 120:  # Save routing table each 120 seconds
+                self.save_routing_table()
+
+                last_save_routing_table = time_stamp
 
             time.sleep(4)
 
