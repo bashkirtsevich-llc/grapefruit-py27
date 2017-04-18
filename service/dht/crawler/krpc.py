@@ -266,7 +266,7 @@ class DHTProtocol(KRPC):
 
                 last_save_routing_table = time_stamp
 
-            time.sleep(4)
+            time.sleep(10)
 
     def find_node(self, node):
         target_node_id = generate_node_id()
