@@ -34,9 +34,9 @@ class KRPC(object):
         try:
             self._bytes_send += len(data)
 
-            connectionDuration = time.time() - self._time_created
-            requiredDuration = self._bytes_send / self._bandwidth
-            time.sleep(max(requiredDuration - connectionDuration, self._latency))
+            connection_duration = time.time() - self._time_created
+            required_duration = self._bytes_send / self._bandwidth
+            time.sleep(max(required_duration - connection_duration, self._latency))
 
             self.__socket.sendto(data, address)
         except:
@@ -194,7 +194,7 @@ class DHTProtocol(KRPC):
         if self._on_announce is not None:
             self._on_announce(info_hash, host, port)
 
-    def handle_find_node_response(self, data, address):
+    def handle_find_node_response(self, data, _):
         node_message = data["r"]["nodes"]
         nodes = decode_nodes(node_message)
         self.add_nodes_to_routing_table(nodes)
