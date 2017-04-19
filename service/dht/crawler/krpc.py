@@ -255,25 +255,31 @@ class DHTProtocol(KRPC):
             nodes.append([self.node_id, self._get_sock_name()])
             self.add_nodes_to_routing_table(nodes)
 
-        last_save_routing_table = time.time()
+        timestamps = {
+            "save_routing_table": time.time()
+        }
 
         while True:
             with self.routing_table_lock:
+                timestamp = time.time()
+
                 for bucket in self.routing_table:
                     for node in bucket:
-                        self.find_node(node)
+                        # Decrease frequency. Can request from one node each 10 seconds.
+                        if node[0] not in timestamps or timestamp - timestamps[node[0]] > 10.0:
+                            self.find_node(node)
 
-                time_stamp = time.time()
+                            timestamps[node[0]] = timestamp
 
-                if time_stamp - last_save_routing_table > 120:  # Save routing table each 120 seconds
+                if timestamp - timestamps["save_routing_table"] > 120.0:  # Save routing table each 120 seconds
                     if self._on_save_routing_table is not None:
                         self._on_save_routing_table(self.node_id,
                                                     self.routing_table,
                                                     self._get_sock_name())
 
-                    last_save_routing_table = time_stamp
+                        timestamps["save_routing_table"] = timestamp
 
-            time.sleep(10)
+            time.sleep(5)
 
     def find_node(self, node):
         query = {
