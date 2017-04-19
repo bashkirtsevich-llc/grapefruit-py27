@@ -24,7 +24,7 @@ class KRPC(object):
 
         self._latency = 0.001
         self._bandwidth = UDP_SERVER_BANDWIDTH
-        self._bytes_send = 0
+        self._bytes_sent = 0
         self._time_created = time.time()
 
     def __del__(self):
@@ -32,10 +32,10 @@ class KRPC(object):
 
     def _send(self, data, address):
         try:
-            self._bytes_send += len(data)
+            self._bytes_sent += len(data)
 
             connection_duration = time.time() - self._time_created
-            required_duration = self._bytes_send / self._bandwidth
+            required_duration = self._bytes_sent / self._bandwidth
             time.sleep(max(required_duration - connection_duration, self._latency))
 
             self.__socket.sendto(data, address)
