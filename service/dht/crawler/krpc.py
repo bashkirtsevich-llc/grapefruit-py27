@@ -258,41 +258,35 @@ class DHTProtocol(KRPC):
         last_save_routing_table = time.time()
 
         while True:
-            self.find_nodes_using_routing_table()
+            with self.routing_table_lock:
+                for bucket in self.routing_table:
+                    for node in bucket:
+                        self.find_node(node)
 
-            time_stamp = time.time()
-            if time_stamp - last_save_routing_table > 120:  # Save routing table each 120 seconds
-                self.save_routing_table()
+                time_stamp = time.time()
 
-                last_save_routing_table = time_stamp
+                if time_stamp - last_save_routing_table > 120:  # Save routing table each 120 seconds
+                    if self._on_save_routing_table is not None:
+                        self._on_save_routing_table(self.node_id,
+                                                    self.routing_table,
+                                                    self._get_sock_name())
+
+                    last_save_routing_table = time_stamp
 
             time.sleep(10)
 
     def find_node(self, node):
-        target_node_id = generate_node_id()
-
         query = {
             "t": generate_id(DHTProtocol.TRANS_ID_LENGTH),
             "y": "q",
             "q": "find_node",
             "a": {
                 "id": self.node_id,
-                "target": target_node_id
+                "target": generate_node_id()
             }
         }
 
         self._send_message(query, tuple(node[1]))
-
-    def find_nodes_using_routing_table(self):
-        with self.routing_table_lock:
-            for bucket in self.routing_table:
-                for node in bucket:
-                    self.find_node(node)
-
-    def save_routing_table(self):
-        with self.routing_table_lock:
-            if self._on_save_routing_table is not None:
-                self._on_save_routing_table(self.node_id, self.routing_table, self._get_sock_name())
 
     def start(self):
         client_thread = Thread(target=self.__client)
