@@ -165,7 +165,7 @@ class DHTProtocol(KRPC):
             "r": {
                 "id": self.node_id,
                 "token": generate_id(DHTProtocol.TOKEN_LENGTH),
-                "nodes": encode_nodes(self.find_closest_nodes(info_hash, 16))
+                "nodes": encode_nodes(self.find_closest_nodes(info_hash))
             }
         }
 
@@ -247,7 +247,7 @@ class DHTProtocol(KRPC):
 
         while True:
             target_id = generate_node_id()
-            for node in self.find_closest_nodes(target_id, 160):
+            for node in self.find_closest_nodes(target_id):
                 self.find_node(node, target_id)
 
             if time.time() - rt_save_timestamp > 120.0:  # Save routing table each 120 seconds
@@ -258,6 +258,8 @@ class DHTProtocol(KRPC):
                                                     self._get_sock_name())
 
                     rt_save_timestamp = time.time()
+
+            time.sleep(0.01)
 
     def find_node(self, node, target_id=None):
         query = {
