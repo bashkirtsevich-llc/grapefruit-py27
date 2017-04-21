@@ -8,4 +8,4 @@ INITIAL_NODES = [
     ("router.utorrent.com", 6881)
 ]
 
-UDP_SERVER_BANDWIDTH = 3 * 1024 * 1024  # 3 MBps
+UDP_SERVER_BANDWIDTH = 5 * 1024 * 1024  # 5 MBps

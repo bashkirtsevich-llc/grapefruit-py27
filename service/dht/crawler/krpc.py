@@ -259,7 +259,7 @@ class DHTProtocol(KRPC):
 
                     rt_save_timestamp = time.time()
 
-            time.sleep(0.01)
+            time.sleep(3)
 
     def find_node(self, node, target_id=None):
         query = {
