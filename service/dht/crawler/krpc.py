@@ -53,7 +53,6 @@ class KRPC(object):
 
 
 class DHTProtocol(KRPC):
-    K = 8
     NEW_K = 1500
     TABLE_NUM = 160
     TOKEN_LENGTH = 5
@@ -75,30 +74,31 @@ class DHTProtocol(KRPC):
     def _send_message(self, message, address):
         self._send(bencode(message), address)
 
-    def get_k_closest_nodes(self, node_id):
-        r_table_index = get_routing_table_index(xor(self.node_id, node_id))
+    def find_closest_nodes(self, target_id, k_value=8):
+        with self.routing_table_lock:
+            r_table_index = get_routing_table_index(xor(self.node_id, target_id))
 
-        k_closest_nodes = []
+            k_closest_nodes = []
 
-        index = r_table_index
-        while index >= 0 and len(k_closest_nodes) < DHTProtocol.K:
-            for node in self.routing_table[index]:
-                if len(k_closest_nodes) < DHTProtocol.K:
-                    k_closest_nodes.append(node)
-                else:
-                    break
-            index -= 1
+            index = r_table_index
+            while index >= 0 and len(k_closest_nodes) < k_value:
+                for node in self.routing_table[index]:
+                    if len(k_closest_nodes) < k_value:
+                        k_closest_nodes.append(node)
+                    else:
+                        break
+                index -= 1
 
-        index = r_table_index + 1
-        while index < 160 and len(k_closest_nodes) < DHTProtocol.K:
-            for node in self.routing_table[index]:
-                if len(k_closest_nodes) < DHTProtocol.K:
-                    k_closest_nodes.append(node)
-                else:
-                    break
-            index += 1
+            index = r_table_index + 1
+            while index < 160 and len(k_closest_nodes) < k_value:
+                for node in self.routing_table[index]:
+                    if len(k_closest_nodes) < k_value:
+                        k_closest_nodes.append(node)
+                    else:
+                        break
+                index += 1
 
-        return k_closest_nodes
+            return k_closest_nodes
 
     def add_nodes_to_routing_table(self, nodes):
         with self.routing_table_lock:
@@ -138,7 +138,7 @@ class DHTProtocol(KRPC):
                 break
 
         if len(response_nodes) == 0:
-            response_nodes = self.get_k_closest_nodes(target_node_id)
+            response_nodes = self.find_closest_nodes(target_node_id)
 
         node_message = encode_nodes(response_nodes)
 
@@ -165,7 +165,7 @@ class DHTProtocol(KRPC):
             "r": {
                 "id": self.node_id,
                 "token": generate_id(DHTProtocol.TOKEN_LENGTH),
-                "nodes": encode_nodes(self.get_k_closest_nodes(info_hash))
+                "nodes": encode_nodes(self.find_closest_nodes(info_hash, 16))
             }
         }
 
@@ -243,40 +243,30 @@ class DHTProtocol(KRPC):
             nodes.append([self.node_id, self._get_sock_name()])
             self.add_nodes_to_routing_table(nodes)
 
-        timestamps = {
-            "save_routing_table": time.time()
-        }
+        rt_save_timestamp = time.time()
 
         while True:
-            with self.routing_table_lock:
-                timestamp = time.time()
+            target_id = generate_node_id()
+            for node in self.find_closest_nodes(target_id, 160):
+                self.find_node(node, target_id)
 
-                for bucket in self.routing_table:
-                    for node in bucket:
-                        # Decrease frequency. Can request from one node each 10 seconds.
-                        if node[0] not in timestamps or timestamp - timestamps[node[0]] > 10.0:
-                            self.find_node(node)
-
-                            timestamps[node[0]] = timestamp
-
-                if timestamp - timestamps["save_routing_table"] > 120.0:  # Save routing table each 120 seconds
-                    if self._on_save_routing_table is not None:
+            if time.time() - rt_save_timestamp > 120.0:  # Save routing table each 120 seconds
+                if self._on_save_routing_table is not None:
+                    with self.routing_table_lock:
                         self._on_save_routing_table(self.node_id,
                                                     self.routing_table,
                                                     self._get_sock_name())
 
-                        timestamps["save_routing_table"] = timestamp
+                    rt_save_timestamp = time.time()
 
-            time.sleep(5)
-
-    def find_node(self, node):
+    def find_node(self, node, target_id=None):
         query = {
             "t": generate_id(DHTProtocol.TRANS_ID_LENGTH),
             "y": "q",
             "q": "find_node",
             "a": {
                 "id": self.node_id,
-                "target": generate_node_id()
+                "target": target_id if target_id else generate_node_id()
             }
         }
 
