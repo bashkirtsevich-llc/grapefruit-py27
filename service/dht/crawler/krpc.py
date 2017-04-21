@@ -22,7 +22,7 @@ class KRPC(object):
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__socket.bind(address)
 
-        self._latency = 0.001
+        self._latency = 0.05
         self._bandwidth = UDP_SERVER_BANDWIDTH
         self._bytes_sent = 0
         self._time_created = time.time()
@@ -112,8 +112,6 @@ class DHTProtocol(KRPC):
                         self.routing_table[r_table_index][index] = node
                     else:
                         self.find_node(node)
-
-                        time.sleep(0.05)
 
     def handle_ping_query(self, data, address):
         response = {
@@ -260,8 +258,6 @@ class DHTProtocol(KRPC):
                                                     self._get_sock_name())
 
                     rt_save_timestamp = time.time()
-
-            time.sleep(0.05)
 
     def find_node(self, node, target_id=None):
         query = {
