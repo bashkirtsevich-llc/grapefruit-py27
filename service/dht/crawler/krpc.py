@@ -113,6 +113,8 @@ class DHTProtocol(KRPC):
                     else:
                         self.find_node(node)
 
+                        time.sleep(0.05)
+
     def handle_ping_query(self, data, address):
         response = {
             "t": data["t"],
@@ -259,7 +261,7 @@ class DHTProtocol(KRPC):
 
                     rt_save_timestamp = time.time()
 
-            time.sleep(3)
+            time.sleep(0.05)
 
     def find_node(self, node, target_id=None):
         query = {
