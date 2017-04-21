@@ -22,7 +22,7 @@ class KRPC(object):
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__socket.bind(address)
 
-        self._latency = 0.05
+        self._latency = 0.04
         self._bandwidth = UDP_SERVER_BANDWIDTH
         self._bytes_sent = 0
         self._time_created = time.time()
