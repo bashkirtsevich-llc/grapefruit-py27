@@ -10,7 +10,7 @@ from twisted.protocols import policies
 
 
 class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
-    def __init__(self, info_hash, peer_id, on_metadata_loaded):
+    def __init__(self, info_hash, peer_id, on_metadata_loaded, on_error):
         self._info_hash = info_hash
         self._peer_id = peer_id
 
@@ -20,6 +20,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
 
         self._deferred = defer.Deferred()
         self._deferred.addCallback(on_metadata_loaded, info_hash)
+        self._deferred.addErrback(on_error)
 
     @staticmethod
     def parseMessage(message):
@@ -36,7 +37,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
 
     def handleMessage(self, msg_code, msg_data):
         if msg_code == 20:
-            # If he send extended message, we can extend connection time
+            # If he send extended message, we can reset expiration  time
             self.resetTimeout()
 
             # Extended handshake
@@ -63,7 +64,8 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                         self.sendExtendedMessage(ut_metadata_id, {"msg_type": 0, "piece": i})
                         sleep(0.05)
                 else:
-                    self.transport.loseConnection()
+                    self._deferred.errback((2, "Peer has no necessary protocol extensions"))
+                    self.transport.abortConnection()
 
             elif ord(msg_data[0]) == 1:
                 r, l = decode_dict(msg_data[1:], 0)
@@ -76,6 +78,8 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                     if len(metadata) == r["total_size"]:
                         if sha1(metadata).digest() == self._info_hash:
                             self._deferred.callback(bdecode(metadata))
+                        else:
+                            self._deferred.errback((3, "Wrong metadata hash"))
 
                         # Abort connection anyway
                         self.transport.abortConnection()
@@ -115,18 +119,17 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                     break
 
     def timeoutConnection(self):
+        self._deferred.errback((1, "Connection aborted by timeout"))
         self.transport.abortConnection()
 
 
 class BitTorrentFactory(protocol.ClientFactory):
     protocol = BitTorrentClient
 
-    def __init__(self, info_hash, peer_id, on_metadata_loaded):
-        self._info_hash = info_hash
-        self._peer_id = peer_id
-        self._on_metadata_loaded = on_metadata_loaded
+    def __init__(self, **kwargs):
+        self._kwargs = kwargs
 
     def buildProtocol(self, addr):
-        p = self.protocol(self._info_hash, self._peer_id, self._on_metadata_loaded)
+        p = self.protocol(**self._kwargs)
         p.factory = self
         return p
