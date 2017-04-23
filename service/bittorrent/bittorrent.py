@@ -37,7 +37,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
 
     def handleMessage(self, msg_code, msg_data):
         if msg_code == 20:
-            # If he send extended message, we can reset expiration  time
+            # If he send extended message, we can  time
             self.resetTimeout()
 
             # Extended handshake
@@ -64,7 +64,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                         self.sendExtendedMessage(ut_metadata_id, {"msg_type": 0, "piece": i})
                         sleep(0.05)
                 else:
-                    self._deferred.errback((2, "Peer has no necessary protocol extensions"))
+                    self._deferred.errback((11, "Peer has no necessary protocol extensions"))
                     self.transport.abortConnection()
 
             elif ord(msg_data[0]) == 1:
@@ -79,7 +79,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                         if sha1(metadata).digest() == self._info_hash:
                             self._deferred.callback(bdecode(metadata))
                         else:
-                            self._deferred.errback((3, "Wrong metadata hash"))
+                            self._deferred.errback((12, "Wrong metadata hash"))
 
                         # Abort connection anyway
                         self.transport.abortConnection()
@@ -119,7 +119,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                     break
 
     def timeoutConnection(self):
-        self._deferred.errback((1, "Connection aborted by timeout"))
+        self._deferred.errback((10, "Connection aborted by timeout"))
         self.transport.abortConnection()
 
 
@@ -128,6 +128,18 @@ class BitTorrentFactory(protocol.ClientFactory):
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
+
+    def callback_error(self, code, reason):
+        on_error = self._kwargs.get("on_error", None)
+
+        if on_error and callable(on_error):
+            on_error((code, reason))
+
+    def clientConnectionFailed(self, connector, reason):
+        self.callback_error(1, reason)
+
+    def clientConnectionLost(self, connector, reason):
+        self.callback_error(2, reason)
 
     def buildProtocol(self, addr):
         p = self.protocol(**self._kwargs)
