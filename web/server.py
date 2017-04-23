@@ -65,7 +65,12 @@ def start_server(mongodb_uri, host, port):
 
         @app.route("/")
         def show_index():
-            return render_template("index.html", torrents_count=db.torrents.count())
+            return render_template("index.html",
+                                   torrents_count=db.torrents.find(
+                                       {"$and": [
+                                           {"name": {"$exists": True}},
+                                           {"files": {"$exists": True}}]}
+                                   ).count())
 
         def render_results(source_url, query, page, elapsed_time, results):
             items = list(results)
@@ -98,7 +103,10 @@ def start_server(mongodb_uri, host, port):
                 # Query database
                 with db_lock:
                     results = db.torrents.find(
-                        {"$text": {"$search": query}},
+                        {"$and": [
+                            {"$text": {"$search": query}},
+                            {"name": {"$exists": True}},
+                            {"files": {"$exists": True}}]},
                         {"score": {"$meta": "textScore"}}
                     ).sort([("score", {"$meta": "textScore"})])
 
@@ -115,7 +123,11 @@ def start_server(mongodb_uri, host, port):
             start_time = time()
             # Query database
             with db_lock:
-                results = db.torrents.find().sort("_id", DESCENDING).limit(100)
+                results = db.torrents.find(
+                    {"$and": [
+                        {"name": {"$exists": True}},
+                        {"files": {"$exists": True}}]}
+                ).sort("_id", DESCENDING).limit(100)
 
             elapsed_time = time() - start_time
 
@@ -129,7 +141,10 @@ def start_server(mongodb_uri, host, port):
             if info_hash:
                 # Query database
                 with db_lock:
-                    result = db.torrents.find_one({"info_hash": info_hash})
+                    result = db.torrents.find_one({"$and": [
+                        {"info_hash": info_hash},
+                        {"name": {"$exists": True}},
+                        {"files": {"$exists": True}}]})
 
                 if result is not None:
                     arguments = {
