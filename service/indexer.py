@@ -1,3 +1,4 @@
+from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
 from time import sleep
@@ -29,7 +30,7 @@ def __index_next_info_hash(db, try_load_metadata):
 
         if torrents:
             args = dict(
-                info_hash=choice(torrents)["info_hash"],
+                info_hash=unhexlify(choice(torrents)["info_hash"]),
                 on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
                 on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata)
             )
