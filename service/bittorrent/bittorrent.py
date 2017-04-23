@@ -119,7 +119,9 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                     break
 
     def timeoutConnection(self):
-        self._deferred.errback((10, "Connection aborted by timeout"))
+        if not self._deferred.called:
+            self._deferred.errback((10, "Connection aborted by timeout"))
+
         self.transport.abortConnection()
 
 
