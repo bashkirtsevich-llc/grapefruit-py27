@@ -31,7 +31,7 @@ def __index_next_info_hash(db, try_load_metadata):
             args = dict(
                 info_hash=choice(torrents)["info_hash"],
                 on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
-                on_no_peers_found=lambda: __index_next_info_hash(db, try_load_metadata)
+                on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata)
             )
             try_load_metadata(**args)
 
