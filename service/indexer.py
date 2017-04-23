@@ -1,4 +1,3 @@
-from binascii import unhexlify, hexlify
 from pymongo import MongoClient
 from torrent import load_torrent
 from time import sleep
@@ -7,16 +6,14 @@ from random import choice
 
 def __store_metadata(db, metadata, try_load_metadata):
     try:
-        item = {
-            "info_hash": metadata["info_hash"],
-            "name": metadata["name"],
-            "files": map(lambda f: {"path": f["path"],
-                                    "length": f["length"]},
-                         metadata["files"])
-        }
+        key = {"info_hash": metadata["info_hash"]}
 
-        if db.torrents.find_one({"info_hash": item["info_hash"]}) is None:
-            db.torrents.insert_one(item)
+        value = {"name": metadata["name"],
+                 "files": map(lambda f: {"path": f["path"],
+                                         "length": f["length"]},
+                              metadata["files"])}
+
+        db.torrents.update(key, {"$set": value})
     finally:
         __index_next_info_hash(db, try_load_metadata)
 
