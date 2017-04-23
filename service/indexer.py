@@ -2,7 +2,7 @@ from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
 from time import sleep
-from random import choice
+from random import shuffle
 
 
 def __store_metadata(db, metadata, try_load_metadata):
@@ -19,20 +19,26 @@ def __store_metadata(db, metadata, try_load_metadata):
         __index_next_info_hash(db, try_load_metadata)
 
 
-def __index_next_info_hash(db, try_load_metadata):
-    while True:
-        torrents = list(db.torrents.find(
-            {"$and": [
-                {"name": {"$exists": False}},
-                {"files": {"$exists": False}}]
-            }
-        ))
+def __shuffle(list):
+    shuffle(list)
+    return list
 
-        if torrents:
+
+def __index_next_info_hash(db, try_load_metadata, torrents=None):
+    while True:
+        torrents_list = torrents or __shuffle(
+            list(db.torrents.find(
+                {"$and": [
+                    {"name": {"$exists": False}},
+                    {"files": {"$exists": False}}]}
+            ))
+        )
+
+        if torrents_list:
             args = dict(
-                info_hash=unhexlify(choice(torrents)["info_hash"]),
+                info_hash=unhexlify(torrents_list[0]["info_hash"]),
                 on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
-                on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata)
+                on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list[1:])
             )
             try_load_metadata(**args)
 
@@ -48,9 +54,7 @@ def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("rout
 
         load_torrent(bootstrap_node_address, port,
                      node_id=node_id,
-                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(
-                         db=db,
-                         try_load_metadata=try_load_metadata)
+                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata)
                      )
     finally:
         mongodb_client.close()
