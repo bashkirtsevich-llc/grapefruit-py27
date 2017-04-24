@@ -44,13 +44,13 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
 
         if torrents_list:
             item = torrents_list[0]
-            info_hash = unhexlify(item["info_hash"])
+            info_hash = item["info_hash"]
 
             # Increase torrent attempts count
             db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt", item.get("attempt", 0) + 1}})
 
             args = dict(
-                info_hash=info_hash,
+                info_hash=unhexlify(info_hash),
                 on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
                 on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list[1:])
             )
