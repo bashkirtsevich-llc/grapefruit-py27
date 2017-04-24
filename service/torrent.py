@@ -29,11 +29,12 @@ def load_torrent(bootstrap_address, port, **kwargs):
     def connect_next_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
         if peers:
             slice = 1
+            slice_size = 10
 
-            for peer in peers[:10]:
-                if peers[slice * 10:]:
+            for peer in peers[:slice_size]:
+                if peers[slice * slice_size:]:
                     cb_connect_next = lambda error: connect_next_peers(
-                        peers[slice * 10:],
+                        peers[slice * slice_size:],
                         info_hash,
                         on_torrent_loaded,
                         on_torrent_not_found)
