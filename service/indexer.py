@@ -14,7 +14,8 @@ def __store_metadata(db, metadata, try_load_metadata):
                                          "length": f["length"]},
                               metadata["files"])}
 
-        db.torrents.update(key, {"$set": value})
+        db.torrents.update(key, {"$set": value,
+                                 "$unset": {"attempt": ""}})
     finally:
         __index_next_info_hash(db, try_load_metadata)
 
