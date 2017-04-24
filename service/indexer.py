@@ -50,7 +50,7 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
             info_hash = item["info_hash"]
 
             # Increase torrent attempts count
-            db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt", item.get("attempt", 0) + 1}})
+            db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt": item.get("attempt", 0) + 1}})
 
             args = dict(
                 info_hash=unhexlify(info_hash),
