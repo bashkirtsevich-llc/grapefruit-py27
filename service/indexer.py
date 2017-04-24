@@ -29,7 +29,7 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
     while True:
         sleep(60)  # Wait 60 seconds
 
-        # Remove torrents with too much attempts count ()
+        # Remove torrents with too much attempts count (ignore after 10 attempts)
         db.torrents.remove({"$and": [{"name": {"$exists": False}},
                                      {"files": {"$exists": False}},
                                      {"attempt": {"$gte": 10}}]}
