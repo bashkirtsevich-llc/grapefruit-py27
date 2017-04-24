@@ -20,11 +20,6 @@ def __store_metadata(db, metadata, try_load_metadata):
         __index_next_info_hash(db, try_load_metadata)
 
 
-def __shuffle(src_list):
-    shuffle(src_list)
-    return src_list
-
-
 def __index_next_info_hash(db, try_load_metadata, torrents=None):
     while True:
         sleep(60)  # Wait 60 seconds
@@ -36,13 +31,16 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
                            )
 
         # Find candidates to load
-        torrents_list = torrents or __shuffle(
-            list(db.torrents.find(
-                {"$and": [{"name": {"$exists": False}},
-                          {"files": {"$exists": False}},
-                          {"attempt": {"$lt": 10}}]}
-            ))
-        )
+        if torrents:
+            torrents_list = torrents
+        else:
+            torrents_list = list(
+                db.torrents.find({"$and": [{"name": {"$exists": False}},
+                                           {"files": {"$exists": False}},
+                                           {"attempt": {"$lt": 10}}]}
+                                 )
+            )
+            shuffle(torrents_list)
 
         if torrents_list:
             item = torrents_list[0]
