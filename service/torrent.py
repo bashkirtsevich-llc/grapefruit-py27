@@ -32,15 +32,14 @@ def load_torrent(bootstrap_address, port, **kwargs):
 
             args = dict(info_hash=info_hash,
                         peer_id=kwargs.get("peer_id", generate_peer_id()),
-                        on_metadata_loaded=lambda metadata, info_hash: torrent_loaded(
-                            metadata, info_hash, on_torrent_loaded),
+                        on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
+                            metadata, torrent_hash, on_torrent_loaded),
                         on_error=lambda error: connect_next_peer(
-                            peers[1:], info_hash, on_torrent_loaded, on_torrent_not_found)
-                        )
+                            peers[1:], info_hash, on_torrent_loaded, on_torrent_not_found))
             factory = BitTorrentFactory(**args)
 
-            ip, port = peer
-            reactor.connectTCP(ip, port, factory, timeout=10)
+            peer_ip, peer_port = peer
+            reactor.connectTCP(peer_ip, peer_port, factory, timeout=10)
 
         elif on_torrent_not_found and callable(on_torrent_not_found):
             on_torrent_not_found()
