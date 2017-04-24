@@ -26,6 +26,8 @@ def __shuffle(list):
 
 def __index_next_info_hash(db, try_load_metadata, torrents=None):
     while True:
+        sleep(60)  # Wait 60 seconds
+
         # Remove torrents with too much attempts count ()
         db.torrents.remove({"$and": [{"name": {"$exists": False}},
                                      {"files": {"$exists": False}},
@@ -56,8 +58,6 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
             try_load_metadata(**args)
 
             break
-        else:
-            sleep(60)  # Wait 60 seconds
 
 
 def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
