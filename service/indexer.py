@@ -37,7 +37,10 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
             torrents_list = list(
                 db.torrents.find({"$and": [{"name": {"$exists": False}},
                                            {"files": {"$exists": False}},
-                                           {"attempt": {"$lt": 10}}]}
+                                           {"$or": [{"attempt": {"$exists": False}},
+                                                    {"attempt": {"$lt": 10}}
+                                                    ]}
+                                           ]}
                                  )
             )
             shuffle(torrents_list)
