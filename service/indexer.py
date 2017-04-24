@@ -19,9 +19,9 @@ def __store_metadata(db, metadata, try_load_metadata):
         __index_next_info_hash(db, try_load_metadata)
 
 
-def __shuffle(list):
-    shuffle(list)
-    return list
+def __shuffle(src_list):
+    shuffle(src_list)
+    return src_list
 
 
 def __index_next_info_hash(db, try_load_metadata, torrents=None):
