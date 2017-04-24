@@ -26,26 +26,37 @@ def load_torrent(bootstrap_address, port, **kwargs):
 
             on_torrent_loaded(args)
 
-    def connect_next_peer(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
+    def connect_next_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
         if peers:
-            peer = peers[0]
+            slice = 1
 
-            args = dict(info_hash=info_hash,
-                        peer_id=kwargs.get("peer_id", generate_peer_id()),
-                        on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
-                            metadata, torrent_hash, on_torrent_loaded),
-                        on_error=lambda error: connect_next_peer(
-                            peers[1:], info_hash, on_torrent_loaded, on_torrent_not_found))
-            factory = BitTorrentFactory(**args)
+            for peer in peers[:10]:
+                if peers[slice * 10:]:
+                    cb_connect_next = lambda error: connect_next_peers(
+                        peers[slice * 10:],
+                        info_hash,
+                        on_torrent_loaded,
+                        on_torrent_not_found)
+                else:
+                    cb_connect_next = None
 
-            peer_ip, peer_port = peer
-            reactor.connectTCP(peer_ip, peer_port, factory, timeout=10)
+                args = dict(info_hash=info_hash,
+                            peer_id=kwargs.get("peer_id", generate_peer_id()),
+                            on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
+                                metadata, torrent_hash, on_torrent_loaded),
+                            on_error=cb_connect_next)
+                factory = BitTorrentFactory(**args)
+
+                slice += 1
+
+                peer_ip, peer_port = peer
+                reactor.connectTCP(peer_ip, peer_port, factory, timeout=10)
 
         elif on_torrent_not_found and callable(on_torrent_not_found):
             on_torrent_not_found()
 
     def get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found):
-        server.get_peers(info_hash).addCallback(connect_next_peer, info_hash,
+        server.get_peers(info_hash).addCallback(connect_next_peers, info_hash,
                                                 on_torrent_loaded, on_torrent_not_found)
 
     def bootstrap_done(found, server):
