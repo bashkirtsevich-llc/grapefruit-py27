@@ -49,12 +49,15 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
         info_hash = item["info_hash"]
 
         # Increase torrent attempts count
-        db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt": item.get("attempt", 0) + 1}})
+        db.torrents.update({"info_hash": info_hash},
+                           {"$set": {"attempt": item.get("attempt", 0) + 1}})
+
+        info_hash = unhexlify(info_hash)
     else:
         info_hash = None
 
     try_load_metadata(
-        info_hash=unhexlify(info_hash) if info_hash else None,
+        info_hash=info_hash,
         schedule=60,  # Wait 60 seconds
         on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
         on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list[1:])
