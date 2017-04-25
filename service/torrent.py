@@ -26,32 +26,37 @@ def load_torrent(bootstrap_address, port, **kwargs):
 
             on_torrent_loaded(args)
 
-    def connect_next_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
-        if peers:
-            slice = 1
-            slice_size = 10
-
-            for peer in peers[:slice_size]:
-                if peers[slice * slice_size:]:
-                    cb_connect_next = lambda error: connect_next_peers(
-                        peers[slice * slice_size:],
-                        info_hash,
-                        on_torrent_loaded,
-                        on_torrent_not_found)
-                else:
-                    cb_connect_next = None
-
-                args = dict(info_hash=info_hash,
-                            peer_id=kwargs.get("peer_id", generate_peer_id()),
-                            on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
-                                metadata, torrent_hash, on_torrent_loaded),
-                            on_error=cb_connect_next)
-                factory = BitTorrentFactory(**args)
-
-                slice += 1
+    def connect_next_peers(get_next_peer, info_hash, on_torrent_loaded, on_torrent_not_found):
+        peer = get_next_peer()
+        if peer:
+            for _ in range(10):
+                factory = BitTorrentFactory(
+                    info_hash=info_hash,
+                    peer_id=kwargs.get("peer_id", generate_peer_id()),
+                    on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
+                        metadata, torrent_hash, on_torrent_loaded),
+                    on_error=lambda error: connect_next_peers(
+                        get_next_peer, info_hash, on_torrent_loaded, on_torrent_not_found)
+                )
 
                 peer_ip, peer_port = peer
                 reactor.connectTCP(peer_ip, peer_port, factory, timeout=10)
+
+                peer = get_next_peer()
+                if not peer:
+                    break
+
+        elif on_torrent_not_found and callable(on_torrent_not_found):
+            on_torrent_not_found()
+
+    def connect_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
+        if peers:
+            connect_next_peers(
+                get_next_peer=lambda: peers.pop() if peers else None,
+                info_hash=info_hash,
+                on_torrent_loaded=on_torrent_loaded,
+                on_torrent_not_found=on_torrent_not_found
+            )
 
         elif on_torrent_not_found and callable(on_torrent_not_found):
             on_torrent_not_found()
@@ -59,7 +64,7 @@ def load_torrent(bootstrap_address, port, **kwargs):
     def get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found):
         # if "info_hash" is not present -- looks like a crutch
         if info_hash:
-            server.get_peers(info_hash).addCallback(connect_next_peers, info_hash,
+            server.get_peers(info_hash).addCallback(connect_peers, info_hash,
                                                     on_torrent_loaded, on_torrent_not_found)
 
         # But "callable(on_torrent_not_found)" looks like a crutch too :)
