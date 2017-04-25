@@ -57,16 +57,24 @@ def load_torrent(bootstrap_address, port, **kwargs):
             on_torrent_not_found()
 
     def get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found):
-        server.get_peers(info_hash).addCallback(connect_next_peers, info_hash,
-                                                on_torrent_loaded, on_torrent_not_found)
+        # if "info_hash" is not present -- looks like a crutch
+        if info_hash:
+            server.get_peers(info_hash).addCallback(connect_next_peers, info_hash,
+                                                    on_torrent_loaded, on_torrent_not_found)
+
+        # But "callable(on_torrent_not_found)" looks like a crutch too :)
+        elif on_torrent_not_found and callable(on_torrent_not_found):
+            on_torrent_not_found()
 
     def bootstrap_done(found, server):
         if found:
             on_bootstrap_done = kwargs.get("on_bootstrap_done", None)
 
             if on_bootstrap_done and callable(on_bootstrap_done):
-                on_bootstrap_done(lambda info_hash, on_torrent_loaded, on_torrent_not_found:
-                                  get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found))
+                on_bootstrap_done(lambda info_hash, on_torrent_loaded, on_torrent_not_found=None, schedule=0:
+                                  # Invoke "get_peers" after "schedule" seconds
+                                  reactor.callLater(schedule, get_peers,
+                                                    server, info_hash, on_torrent_loaded, on_torrent_not_found))
         else:
             on_bootstrap_failed = kwargs.get("on_bootstrap_failed", None)
 

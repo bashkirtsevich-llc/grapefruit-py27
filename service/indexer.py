@@ -21,45 +21,44 @@ def __store_metadata(db, metadata, try_load_metadata):
 
 
 def __index_next_info_hash(db, try_load_metadata, torrents=None):
-    while True:
-        sleep(60)  # Wait 60 seconds
+    MAX_ATTEMPTS_COUNT = 10
 
-        # Remove torrents with too much attempts count (ignore after 10 attempts)
-        db.torrents.remove({"$and": [{"name": {"$exists": False}},
-                                     {"files": {"$exists": False}},
-                                     {"attempt": {"$gte": 10}}]}
-                           )
+    # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
+    db.torrents.remove({"$and": [{"name": {"$exists": False}},
+                                 {"files": {"$exists": False}},
+                                 {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}]}
+                       )
 
-        # Find candidates to load
-        if torrents:
-            torrents_list = torrents
-        else:
-            torrents_list = list(
-                db.torrents.find({"$and": [{"name": {"$exists": False}},
-                                           {"files": {"$exists": False}},
-                                           {"$or": [{"attempt": {"$exists": False}},
-                                                    {"attempt": {"$lt": 10}}
-                                                    ]}
-                                           ]}
-                                 )
-            )
-            shuffle(torrents_list)
+    # Find candidates to load
+    if torrents:
+        torrents_list = torrents
+    else:
+        torrents_list = list(
+            db.torrents.find({"$and": [{"name": {"$exists": False}},
+                                       {"files": {"$exists": False}},
+                                       {"$or": [{"attempt": {"$exists": False}},
+                                                {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
+                                                ]}
+                                       ]}
+                             )
+        )
+        shuffle(torrents_list)
 
-        if torrents_list:
-            item = torrents_list[0]
-            info_hash = item["info_hash"]
+    if torrents_list:
+        item = torrents_list[0]
+        info_hash = item["info_hash"]
 
-            # Increase torrent attempts count
-            db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt": item.get("attempt", 0) + 1}})
+        # Increase torrent attempts count
+        db.torrents.update({"info_hash": info_hash}, {"$set": {"attempt": item.get("attempt", 0) + 1}})
+    else:
+        info_hash = None
 
-            args = dict(
-                info_hash=unhexlify(info_hash),
-                on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
-                on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list[1:])
-            )
-            try_load_metadata(**args)
-
-            break
+    try_load_metadata(
+        info_hash=unhexlify(info_hash) if info_hash else None,
+        schedule=60,  # Wait 60 seconds
+        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
+        on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list[1:])
+    )
 
 
 def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
