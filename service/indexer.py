@@ -1,7 +1,6 @@
 from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
-from time import sleep
 from random import shuffle
 
 
