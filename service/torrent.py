@@ -15,7 +15,7 @@ def load_torrent(bootstrap_address, port, **kwargs):
     """
 
     def torrent_loaded(metadata, info_hash, on_torrent_loaded):
-        if on_torrent_loaded and callable(on_torrent_loaded):
+        if callable(on_torrent_loaded):
             args = {
                 "info_hash": hexlify(info_hash),
                 "name": metadata["name"],
