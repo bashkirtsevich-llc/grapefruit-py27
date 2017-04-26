@@ -12,16 +12,16 @@ class ConnectionLink:
         self._got_metadata = False
 
         for peer in peers:
-            factory = BitTorrentFactory(
-                info_hash=info_hash,
-                peer_id=peer_id,
-                on_metadata_loaded=lambda metadata, torrent_hash: self._on_got_metadata(peer, metadata, torrent_hash),
-                on_error=lambda error: self._forgot_connection(peer)
-            )
+            self._register_connection(peer, info_hash, peer_id)
 
-            self._register_connection(peer, factory)
+    def _register_connection(self, peer, info_hash, peer_id):
+        factory = BitTorrentFactory(
+            info_hash=info_hash,
+            peer_id=peer_id,
+            on_metadata_loaded=lambda metadata, torrent_hash: self._on_got_metadata(peer, metadata, torrent_hash),
+            on_error=lambda error: self._forgot_connection(peer)
+        )
 
-    def _register_connection(self, peer, factory):
         self._connections[peer] = factory
 
     def _forgot_connection(self, peer):
