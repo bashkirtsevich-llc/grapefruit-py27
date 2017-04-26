@@ -1,7 +1,6 @@
 from binascii import hexlify
 from twisted.internet import reactor
-
-from bittorrent.bittorrent import BitTorrentFactory
+from bittorrent.bittorrent import ConnectionChain
 from dht.server.network import Server
 from dht.common_utils import generate_node_id, generate_peer_id
 
@@ -26,38 +25,30 @@ def load_torrent(bootstrap_address, port, **kwargs):
 
             on_torrent_loaded(args)
 
-    def connect_next_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
+    def connect_peers(peers, info_hash, on_torrent_loaded, on_torrent_not_found):
         if peers:
-            factory = BitTorrentFactory(
-                info_hash=info_hash,
-                peer_id=kwargs.get("peer_id", generate_peer_id()),
-                on_metadata_loaded=lambda metadata, torrent_hash: torrent_loaded(
-                    metadata, torrent_hash, on_torrent_loaded),
-                on_error=lambda error: connect_next_peers(
-                    peers[1:], info_hash, on_torrent_loaded, on_torrent_not_found)
-            )
+            # Will garbage collector drop it?
+            chain = ConnectionChain(peers, info_hash, kwargs.get("peer_id", generate_peer_id()),
+                                    on_torrent_loaded, on_torrent_not_found)
+            chain.connect()
 
-            peer_ip, peer_port = peers[0]
-            reactor.connectTCP(peer_ip, peer_port, factory, timeout=10)
-
-        elif on_torrent_not_found and callable(on_torrent_not_found):
+        elif callable(on_torrent_not_found):
             on_torrent_not_found()
 
     def get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found):
-        # if "info_hash" is not present -- looks like a crutch
-        if info_hash:
-            server.get_peers(info_hash).addCallback(connect_next_peers, info_hash,
+        # Guard info_hash
+        if info_hash and len(info_hash) == 20:
+            server.get_peers(info_hash).addCallback(connect_peers, info_hash,
                                                     on_torrent_loaded, on_torrent_not_found)
 
-        # But "callable(on_torrent_not_found)" looks like a crutch too :)
-        elif on_torrent_not_found and callable(on_torrent_not_found):
+        elif callable(on_torrent_not_found):
             on_torrent_not_found()
 
     def bootstrap_done(found, server):
         if found:
             on_bootstrap_done = kwargs.get("on_bootstrap_done", None)
 
-            if on_bootstrap_done and callable(on_bootstrap_done):
+            if callable(on_bootstrap_done):
                 on_bootstrap_done(lambda info_hash, on_torrent_loaded, on_torrent_not_found=None, schedule=0:
                                   # Invoke "get_peers" after "schedule" seconds
                                   reactor.callLater(schedule, get_peers,
@@ -65,7 +56,7 @@ def load_torrent(bootstrap_address, port, **kwargs):
         else:
             on_bootstrap_failed = kwargs.get("on_bootstrap_failed", None)
 
-            if on_bootstrap_failed and callable(on_bootstrap_failed):
+            if callable(on_bootstrap_failed):
                 on_bootstrap_failed()
 
             reactor.stop()

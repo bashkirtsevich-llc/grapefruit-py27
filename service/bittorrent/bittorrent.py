@@ -1,149 +1,82 @@
-# Source code from https://github.com/bashkirtsevich/Py-ut_metadata
-
-from struct import pack, unpack
-from binascii import unhexlify
-from bencode import bencode, bdecode, decode_dict
-from time import sleep
-from hashlib import sha1
-from twisted.internet import protocol, defer
-from twisted.protocols import policies
+from twisted.internet import reactor
+from protocol import BitTorrentFactory
 
 
-class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
-    def __init__(self, info_hash, peer_id, on_metadata_loaded, on_error):
-        self._info_hash = info_hash
-        self._peer_id = peer_id
+class ConnectionLink:
+    def __init__(self, peers, info_hash, peer_id, on_metadata_loaded, on_metadata_not_found):
+        self._on_metadata_loaded = on_metadata_loaded
+        self._on_metadata_not_found = on_metadata_not_found
 
-        self._buffer = buffer("")
-        self._read_handshake = True
-        self._metadata = {}
+        # Need critical sections? Is "reactor" single thread?
+        self._connections = {}
+        self._got_metadata = False
 
-        self._deferred = defer.Deferred()
-        self._deferred.addCallback(on_metadata_loaded, info_hash)
-        self._deferred.addErrback(on_error)
+        for peer in peers:
+            factory = BitTorrentFactory(
+                info_hash=info_hash,
+                peer_id=peer_id,
+                on_metadata_loaded=lambda metadata, torrent_hash: self._on_got_metadata(peer, metadata, torrent_hash),
+                on_error=lambda error: self._forgot_connection(peer)
+            )
 
-    @staticmethod
-    def parseMessage(message):
-        # Return message code and message data
-        if message:
-            return (unpack("B", message[:1])[0], message[1:])
-        else:
-            return None
+            self._register_connection(peer, factory)
 
-    def sendExtendedMessage(self, message_id, message_data):
-        buf = pack("BB", 20, message_id) + bencode(message_data)
+    def _register_connection(self, peer, factory):
+        self._connections[peer] = factory
 
-        self.transport.write(pack("!I", len(buf)) + buf)
+    def _forgot_connection(self, peer):
+        del self._connections[peer]
 
-    def handleMessage(self, msg_code, msg_data):
-        if msg_code == 20:
-            # If he send extended message, we can  time
-            self.resetTimeout()
+        if not self._connections and not self._got_metadata and callable(self._on_metadata_not_found):
+            self._on_metadata_not_found()
 
-            # Extended handshake
-            if ord(msg_data[0]) == 0:
-                hs_data = bdecode(msg_data[1:])
+    def _on_got_metadata(self, peer, metadata, torrent_hash):
+        self._forgot_connection(peer)
 
-                if "metadata_size" in hs_data and "m" in hs_data and "ut_metadata" in hs_data["m"]:
-                    metadata_size = hs_data["metadata_size"]
-                    ut_metadata_id = hs_data["m"]["ut_metadata"]
+        if not self._got_metadata:
+            self._got_metadata = True
 
-                    hs_response = {"e": 0,
-                                   "metadata_size": hs_data["metadata_size"],
-                                   "v": "\xce\xbcTorrent 3.4.9",
-                                   "m": {"ut_metadata": 1},
-                                   "reqq": 255}
+            if callable(self._on_metadata_loaded):
+                self._on_metadata_loaded(metadata, torrent_hash)
 
-                    # Response extended handshake
-                    self.sendExtendedMessage(0, hs_response)
-
-                    sleep(0.5)
-
-                    # Request metadata
-                    for i in range(0, 1 + metadata_size / (16 * 1024)):
-                        self.sendExtendedMessage(ut_metadata_id, {"msg_type": 0, "piece": i})
-                        sleep(0.05)
-                else:
-                    self._deferred.errback((11, "Peer has no necessary protocol extensions"))
-                    self.transport.abortConnection()
-
-            elif ord(msg_data[0]) == 1:
-                r, l = decode_dict(msg_data[1:], 0)
-
-                if r["msg_type"] == 1:
-                    self._metadata[r["piece"]] = msg_data[l + 1:]
-
-                    metadata = reduce(lambda r, e: r + self._metadata[e], sorted(self._metadata.keys()), "")
-
-                    if len(metadata) == r["total_size"]:
-                        if sha1(metadata).digest() == self._info_hash:
-                            self._deferred.callback(bdecode(metadata))
-                        else:
-                            self._deferred.errback((12, "Wrong metadata hash"))
-
-                        # Abort connection anyway
-                        self.transport.abortConnection()
-
-    def connectionMade(self):
-        # Set connection timeout in 10 seconds (after 10 seconds idle connection will be aborted)
-        self.setTimeout(10)
-        # Send handshake
-        bp = list("BitTorrent protocol")
-        self.transport.write(pack("B19c", 19, *bp))
-        self.transport.write(unhexlify("0000000000100005"))
-        self.transport.write(self._info_hash)
-        self.transport.write(self._peer_id)
-
-    def dataReceived(self, data):
-        self._buffer = buffer(self._buffer) + buffer(data)
-
-        if self._read_handshake:
-            if len(self._buffer) >= 68:
-                # Skip handshake response
-                self._buffer = self._buffer[68:]
-                self._read_handshake = False
-            else:
-                return
-        else:
-            # Read regular message
-            while self._buffer:
-                msg_len = unpack("!I", self._buffer[:4])[0]
-
-                if len(self._buffer) >= msg_len + 4:
-                    message = self.parseMessage(self._buffer[4: msg_len + 4])
-                    if message:
-                        self.handleMessage(*message)
-
-                    self._buffer = self._buffer[msg_len + 4:]
-                else:
-                    break
-
-    def timeoutConnection(self):
-        if not self._deferred.called:
-            self._deferred.errback((10, "Connection aborted by timeout"))
-
-        self.transport.abortConnection()
+    def connect(self):
+        for peer in self._connections.keys():
+            peer_ip, peer_port = peer
+            reactor.connectTCP(peer_ip, peer_port, self._connections[peer], timeout=10)
 
 
-class BitTorrentFactory(protocol.ClientFactory):
-    protocol = BitTorrentClient
+class ConnectionChain:
+    def __init__(self, peers, info_hash, peer_id, on_metadata_loaded, on_metadata_not_found):
+        self._on_metadata_loaded = on_metadata_loaded
+        self._on_metadata_not_found = on_metadata_not_found
 
-    def __init__(self, **kwargs):
-        self._kwargs = kwargs
+        self._links = []
+        self._got_metadata = False
 
-    def callback_error(self, code, reason):
-        on_error = self._kwargs.get("on_error", None)
+        for i in xrange(0, len(peers), 10):
+            self._links.append(
+                ConnectionLink(
+                    peers=peers[i:i + 10],
+                    info_hash=info_hash,
+                    peer_id=peer_id,
+                    on_metadata_loaded=self._on_got_metadata,
+                    on_metadata_not_found=self._connect_next_link
+                )
+            )
 
-        if on_error and callable(on_error):
-            on_error((code, reason))
+    def connect(self):
+        self._connect_next_link()
 
-    def clientConnectionFailed(self, connector, reason):
-        self.callback_error(1, reason)
+    def _on_got_metadata(self, metadata, torrent_hash):
+        self._got_metadata = True
 
-    def clientConnectionLost(self, connector, reason):
-        self.callback_error(2, reason)
+        if callable(self._on_metadata_loaded):
+            self._on_metadata_loaded(metadata, torrent_hash)
 
-    def buildProtocol(self, addr):
-        p = self.protocol(**self._kwargs)
-        p.factory = self
-        return p
+    def _connect_next_link(self):
+        if not self._got_metadata:
+            if self._links:
+                link = self._links.pop(0)
+                link.connect()
+            elif callable(self._on_metadata_not_found):
+                self._on_metadata_not_found()
