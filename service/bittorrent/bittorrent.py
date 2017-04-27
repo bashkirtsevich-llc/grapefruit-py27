@@ -28,8 +28,8 @@ class ConnectionLink:
         if peer in self._connections:
             del self._connections[peer]
 
-        if not self._connections and not self._got_metadata and callable(self._on_metadata_not_found):
-            self._on_metadata_not_found()
+            if not self._connections and not self._got_metadata and callable(self._on_metadata_not_found):
+                self._on_metadata_not_found()
 
     def _on_got_metadata(self, peer, metadata, torrent_hash):
         # Used for callback "_on_metadata_loaded" once.
