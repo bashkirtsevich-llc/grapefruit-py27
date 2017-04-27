@@ -64,10 +64,10 @@ def load_torrent(bootstrap_address, port, **kwargs):
 
             reactor.stop()
 
-    def start_dht_server(ip):
+    def start_dht_server(bootstrap_ip, bootstrap_port):
         server = Server(id=kwargs.get("node_id", generate_node_id()))
         server.listen(port)
-        server.bootstrap([(ip, bootstrap_address[1])]).addCallback(bootstrap_done, server)
+        server.bootstrap([(bootstrap_ip, bootstrap_port)]).addCallback(bootstrap_done, server)
 
-    reactor.resolve(bootstrap_address[0]).addCallback(start_dht_server)
+    reactor.resolve(bootstrap_address[0]).addCallback(start_dht_server, bootstrap_address[1])
     reactor.run()
