@@ -29,7 +29,10 @@ def load_torrent(bootstrap_address, port, **kwargs):
         if peers:
             # Will garbage collector drop it?
             chain = ConnectionChain(peers, info_hash, kwargs.get("peer_id", generate_peer_id()),
-                                    on_torrent_loaded, on_torrent_not_found)
+                                    on_metadata_loaded=lambda metadata, torrent_hash:
+                                    torrent_loaded(metadata, torrent_hash, on_torrent_loaded),
+                                    on_metadata_not_found=on_torrent_not_found,
+                                    link_size=20)
             chain.connect()
 
         elif callable(on_torrent_not_found):
