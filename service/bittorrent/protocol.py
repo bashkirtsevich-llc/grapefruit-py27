@@ -130,12 +130,11 @@ class BitTorrentFactory(protocol.ClientFactory):
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
+        self._on_error = self._kwargs.get("on_error", None)
 
     def callback_error(self, code, reason):
-        on_error = self._kwargs.get("on_error", None)
-
-        if on_error and callable(on_error):
-            on_error((code, reason))
+        if callable(self._on_error):
+            self._on_error((code, reason))
 
     def clientConnectionFailed(self, connector, reason):
         self.callback_error(1, reason)
