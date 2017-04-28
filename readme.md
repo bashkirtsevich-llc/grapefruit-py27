@@ -9,11 +9,14 @@ When ```info_hash``` is received, service trying to find peers in bittorrent net
 ## Requirements
 Grapefruit required python libraries such as [```twisted matrix```](https://twistedmatrix.com/trac/) and ```pymongo```. Web-server required [```flask microframework```](http://flask.pocoo.org/).
 
-You can use ```pip``` for install requirements:
-```shell
-pip install pymongo
-pip install Twisted
-pip install Flask
+You can use ```pip``` for install requirements (```pip install -r requirements.txt```).
+Actual requirements (from ```requirements.txt```):
+```
+flask==0.11.1
+pymongo==3.3.1
+twisted==16.6.0
+bencode==1.0
+zope.interface==4.3.3
 ```
 Thats all, I hope.
 
