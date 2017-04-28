@@ -70,7 +70,6 @@ def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("rout
 
         load_torrent(bootstrap_node_address, port,
                      node_id=node_id,
-                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata)
-                     )
+                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata))
     finally:
         mongodb_client.close()
