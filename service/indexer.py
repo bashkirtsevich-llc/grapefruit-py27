@@ -19,23 +19,22 @@ def __store_metadata(db, metadata, *args, **kwargs):
         __index_next_info_hash(db, *args, **kwargs)
 
 
-def __index_next_info_hash(db, try_load_metadata, torrents=None):
-    MAX_ATTEMPTS_COUNT = 10
+def __get_hash_iterator(db):
+    # This method return fetch method, who will reload torrent list, when he is empty
+    def load_torrents():
+        MAX_ATTEMPTS_COUNT = 10
 
-    # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
-    db.torrents.remove(
-        {"$and": [
-            {"name": {"$exists": False}},
-            {"files": {"$exists": False}},
-            {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}
-        ]}
-    )
+        # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
+        db.torrents.remove(
+            {"$and": [
+                {"name": {"$exists": False}},
+                {"files": {"$exists": False}},
+                {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}
+            ]}
+        )
 
-    # Find candidates to load
-    if torrents:
-        torrents_list = torrents
-    else:
-        torrents_list = list(
+        # Find candidates to load
+        torrents = list(
             db.torrents.find(
                 {"$and": [
                     {"name": {"$exists": False}},
@@ -47,25 +46,38 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
                 ]}
             )
         )
-        shuffle(torrents_list)
 
-    if torrents_list:
-        item = torrents_list.pop(0)
-        info_hash = item["info_hash"]
+        shuffle(torrents)
 
-        # Increase torrent attempts count
-        db.torrents.update({"info_hash": info_hash},
-                           {"$set": {"attempt": item.get("attempt", 0) + 1}})
+        return torrents
 
-        info_hash = unhexlify(info_hash)
-    else:
-        info_hash = None
+    # Local torrent items storage, using for closure from fetch_next_item
+    torrents = []
+
+    def fetch_next_item():
+        if not torrents:
+            torrents.extend(load_torrents())
+
+        return torrents.pop(0)
+
+    return fetch_next_item
+
+
+def __index_next_info_hash(db, try_load_metadata, get_next_torrent):
+    item = get_next_torrent()
+    info_hash = item["info_hash"]
+
+    # Increase torrent attempts count
+    db.torrents.update({"info_hash": info_hash},
+                       {"$set": {"attempt": item.get("attempt", 0) + 1}})
+
+    info_hash = unhexlify(info_hash)
 
     try_load_metadata(
         info_hash=info_hash,
         schedule=60,  # Wait 60 seconds
-        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata, torrents_list),
-        on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list)
+        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata, get_next_torrent),
+        on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, get_next_torrent)
     )
 
 
@@ -76,6 +88,7 @@ def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("rout
 
         load_torrent(bootstrap_node_address, port,
                      node_id=node_id,
-                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata))
+                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata,
+                                                                                        __get_hash_iterator(db)))
     finally:
         mongodb_client.close()
