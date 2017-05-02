@@ -81,6 +81,13 @@ def __index_next_info_hash(db, try_load_metadata, get_next_torrent):
     )
 
 
+def __index_torrents(db, try_load_metadata):
+    iterator = __get_hash_iterator(db)
+
+    for _ in xrange(10):
+        __index_next_info_hash(db, try_load_metadata, iterator)
+
+
 def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
     mongodb_client = MongoClient(mongodb_uri)
     try:
@@ -88,7 +95,6 @@ def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("rout
 
         load_torrent(bootstrap_node_address, port,
                      node_id=node_id,
-                     on_bootstrap_done=lambda try_load_metadata: __index_next_info_hash(db, try_load_metadata,
-                                                                                        __get_hash_iterator(db)))
+                     on_bootstrap_done=lambda try_load_metadata: __index_torrents(db, try_load_metadata))
     finally:
         mongodb_client.close()
