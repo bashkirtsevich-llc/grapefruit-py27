@@ -58,20 +58,26 @@ def __get_hash_iterator(db):
         if not torrents:
             torrents.extend(load_torrents())
 
-        return torrents.pop(0)
+        if torrents:
+            return torrents.pop(0)
+        else:
+            return None
 
     return fetch_next_item
 
 
 def __index_next_info_hash(db, try_load_metadata, get_next_torrent):
     item = get_next_torrent()
-    info_hash = item["info_hash"]
+    if item:
+        info_hash = item["info_hash"]
 
-    # Increase torrent attempts count
-    db.torrents.update({"info_hash": info_hash},
-                       {"$set": {"attempt": item.get("attempt", 0) + 1}})
+        # Increase torrent attempts count
+        db.torrents.update({"info_hash": info_hash},
+                           {"$set": {"attempt": item.get("attempt", 0) + 1}})
 
-    info_hash = unhexlify(info_hash)
+        info_hash = unhexlify(info_hash)
+    else:
+        info_hash = None
 
     try_load_metadata(
         info_hash=info_hash,
