@@ -34,7 +34,7 @@ def __get_hash_iterator(db):
         )
 
         # Find candidates to load
-        torrents = list(
+        result = list(
             db.torrents.find(
                 {"$and": [
                     {"name": {"$exists": False}},
@@ -47,9 +47,9 @@ def __get_hash_iterator(db):
             )
         )
 
-        shuffle(torrents)
+        shuffle(result)
 
-        return torrents
+        return result
 
     # Local torrent items storage, using for closure from fetch_next_item
     torrents = []
