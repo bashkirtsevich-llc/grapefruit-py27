@@ -15,8 +15,13 @@ Actual requirements (from ```requirements.txt```):
 flask==0.11.1
 pymongo==3.3.1
 twisted==16.6.0
+rpcudp==2.1
 bencode==1.0
 zope.interface==4.3.3
+```
+Requirement packets for successfully install ```twisted```:
+```
+sudo apt-get install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
 ```
 Thats all, I hope.
 
