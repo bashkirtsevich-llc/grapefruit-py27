@@ -64,7 +64,7 @@ def __index_next_info_hash(db, try_load_metadata, torrents=None):
     try_load_metadata(
         info_hash=info_hash,
         schedule=60,  # Wait 60 seconds
-        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata),
+        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata, torrents_list),
         on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, torrents_list)
     )
 
