@@ -4,7 +4,7 @@ from torrent import load_torrent
 from random import shuffle
 
 
-def __store_metadata(db, metadata, try_load_metadata):
+def __store_metadata(db, metadata, *args, **kwargs):
     try:
         key = {"info_hash": metadata["info_hash"]}
 
@@ -16,30 +16,36 @@ def __store_metadata(db, metadata, try_load_metadata):
         db.torrents.update(key, {"$set": value,
                                  "$unset": {"attempt": ""}})
     finally:
-        __index_next_info_hash(db, try_load_metadata)
+        __index_next_info_hash(db, *args, **kwargs)
 
 
 def __index_next_info_hash(db, try_load_metadata, torrents=None):
     MAX_ATTEMPTS_COUNT = 10
 
     # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
-    db.torrents.remove({"$and": [{"name": {"$exists": False}},
-                                 {"files": {"$exists": False}},
-                                 {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}]}
-                       )
+    db.torrents.remove(
+        {"$and": [
+            {"name": {"$exists": False}},
+            {"files": {"$exists": False}},
+            {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}
+        ]}
+    )
 
     # Find candidates to load
     if torrents:
         torrents_list = torrents
     else:
         torrents_list = list(
-            db.torrents.find({"$and": [{"name": {"$exists": False}},
-                                       {"files": {"$exists": False}},
-                                       {"$or": [{"attempt": {"$exists": False}},
-                                                {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
-                                                ]}
-                                       ]}
-                             )
+            db.torrents.find(
+                {"$and": [
+                    {"name": {"$exists": False}},
+                    {"files": {"$exists": False}},
+                    {"$or": [
+                        {"attempt": {"$exists": False}},
+                        {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
+                    ]}
+                ]}
+            )
         )
         shuffle(torrents_list)
 
