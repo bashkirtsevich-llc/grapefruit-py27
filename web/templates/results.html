@@ -5,43 +5,45 @@
       
       <div class="search-ret">
         <ul class="search-ret-list">
+          {%  if total_count > 0 %}
+            {% for result in results %}
+            <li class="search-ret-item">
+              <h2 class="item-title">
+                <a href="/details?t={{ result.info_hash }}{% if query %}&q={{ query }}{% endif %}" title="{{ result.title }}">{{ result.title }}</a>
+              </h2>
 
-          {% for result in results %}
-          <li class="search-ret-item">
-            <h2 class="item-title">
-              <a href="/details?t={{ result.info_hash }}{% if query %}&q={{ query }}{% endif %}" title="{{ result.title }}">{{ result.title }}</a>
-            </h2>
+              <div class="item-meta-info">
+                <a title="Download using magnet" href="magnet:?xt=urn:btih:{{ result.info_hash }}&dn={{ result.title | urlencode }}" class="magnet"><i class="fa fa-magnet"></i> Magnet Link</a>
+                Size: <span class="item-meta-info-value">{{ result.size }}</span>
+                Files: <span class="item-meta-info-value">{{ result.files_count }}</span>
+              </div>
 
-            <div class="item-meta-info">
-              <a title="Download using magnet" href="magnet:?xt=urn:btih:{{ result.info_hash }}&dn={{ result.title | urlencode }}" class="magnet"><i class="fa fa-magnet"></i> Magnet Link</a>
-              Size: <span class="item-meta-info-value">{{ result.size }}</span>
-              Files: <span class="item-meta-info-value">{{ result.files_count }}</span>
-            </div>
+              <ul class="item-file-list">
 
-            <ul class="item-file-list">
+                {% for file in result.files %}
+                <li class="file">
+                  <span class="file-icon">
+                    <i class="fa fa-file-archive-o"></i>
+                  </span>
+                  <span class="file-name">
+                    {{ file.name }}
+                  </span>
+                  <span class="file-size">
+                    {{ file.size }}
+                  </span>
+                </li>
+                {% endfor %}
 
-              {% for file in result.files %}
-              <li class="file">
-                <span class="file-icon">
-                  <i class="fa fa-file-archive-o"></i>
-                </span>
-                <span class="file-name">
-                  {{ file.name }}
-                </span>
-                <span class="file-size">
-                  {{ file.size }}
-                </span>
-              </li>
-              {% endfor %}
+                {% if result.files_count > 10 %}
+                …
+                {% endif %}
 
-              {% if result.files_count > 10 %}
-              …
-              {% endif %}
-
-            </ul>
-          </li>
-          {% endfor %}
-
+              </ul>
+            </li>
+            {% endfor %}
+          {% else %}
+            <img src="/no_result.png" alt="Sorry! No results found.">
+          {% endif %}
         </ul>
       </div>
 
