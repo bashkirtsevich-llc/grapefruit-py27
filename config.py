@@ -1,7 +1,8 @@
-MONGODB_URI = "mongodb://localhost:27017/"
+MONGODB_URI = "mongodb://localhost:27017/"  # Database address
 
 WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = 8081
+WEB_SERVER_API_ACCESS_HOST = "127.0.0.1"  # IP address, who can use server API
 
 DHT_CRAWLER_PORT = 6882
 DHT_INDEXER_PORT = 6881
