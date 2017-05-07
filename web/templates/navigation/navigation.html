@@ -1,0 +1,24 @@
+<div class="nav">
+  <nav role="navigation">
+    <ul class="pagination">
+      {% with button_disabled=(page <= 1),
+              button_title="« Previous",
+              page_index=(page - 1)%}
+        {% include "navigation/button.html" %}
+      {% endwith %}
+
+      {% for n in range(total_pages) %}
+        {% with button_disabled=(n + 1 == page),
+                page_index=(n + 1)%}
+          {% include "navigation/button.html" %}
+        {% endwith %}
+      {% endfor %}
+
+      {% with button_disabled=(page >= total_pages),
+              button_title="Next »",
+              page_index=(page + 1)%}
+        {% include "navigation/button.html" %}
+      {% endwith %}
+    </ul>
+  </nav>
+</div>
