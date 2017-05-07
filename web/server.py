@@ -1,122 +1,24 @@
-from pymongo import MongoClient, DESCENDING, TEXT
+import urllib
 
 from threading import Lock
 
-from flask import Flask, redirect, abort
+from flask import Flask
+from flask import redirect
+from flask import abort
+from flask import jsonify
 from flask import render_template
 from flask import request
-from flask import jsonify
 
-import urllib
 from markupsafe import Markup
 
-from time import time
+from pymongo import MongoClient, TEXT
 
+from utils import get_files_list
+from utils import get_files_size
 
-def __sizeof_fmt(num, suffix="B"):
-    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
-        if abs(num) < 1024.0:
-            return "%3.1f %s%s" % (num, unit, suffix)
-
-        num /= 1024.0
-
-    return "%.1f %s%s" % (num, "Y", suffix)
-
-
-def __get_files_list(files, first_ten=False):
-    return map(lambda f: {"name": reduce(lambda r, e: r + ("/" if r else "") + e, f["path"], ""),
-                          "size": __sizeof_fmt(f["length"])}, files[:10] if first_ten else files)
-
-
-def __get_files_size(files):
-    return __sizeof_fmt(reduce(lambda r, e: r + e["length"], files, 0))
-
-
-# INTERNAL API
-def __db_search_torrents(db, db_lock, query, fields):
-    assert isinstance(fields, list)
-
-    projection = {"score": {"$meta": "textScore"}, "_id": False}
-
-    for field in fields:
-        projection[field] = True
-
-    start_time = time()
-
-    # Query database
-    with db_lock:
-        cursor = db.torrents.find(
-            filter={"$and": [
-                {"$text": {"$search": query}},
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection=projection,
-            sort=[("score", {"$meta": "textScore"})]
-        )
-
-    if cursor:
-        results = list(cursor)
-    else:
-        results = []
-
-    elapsed_time = time() - start_time
-
-    return results, elapsed_time
-
-
-def __db_get_torrent_details(db, db_lock, info_hash):
-    start_time = time()
-
-    # Query database
-    with db_lock:
-        result = db.torrents.find_one(
-            filter={"$and": [
-                {"info_hash": info_hash},
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection={"_id": False,
-                        "name": True,
-                        "files": True,
-                        "info_hash": True}
-        )
-
-    elapsed_time = time() - start_time
-
-    return result, elapsed_time
-
-
-def __db_get_last_torrents(db, db_lock, fields, limit=100):
-    assert isinstance(fields, list)
-
-    projection = {"_id": False}
-
-    for field in fields:
-        projection[field] = True
-
-    start_time = time()
-
-    # Query database
-    with db_lock:
-        cursor = db.torrents.find(
-            filter={"$and": [
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection=projection,
-            sort=[("_id", DESCENDING)],
-            limit=limit
-        )
-
-    if cursor:
-        results = list(cursor)
-    else:
-        results = []
-
-    elapsed_time = time() - start_time
-
-    return results, elapsed_time
-
-
-# END OF INTERNAL API
+from api import db_search_torrents
+from api import db_get_torrent_details
+from api import db_get_last_torrents
 
 
 def start_server(mongodb_uri, host, port, api_access_host=None):
@@ -163,7 +65,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             if request.remote_addr == api_access_host:
                 query = request.args.get("query")
                 if query:
-                    results, elapsed_time = __db_search_torrents(
+                    results, elapsed_time = db_search_torrents(
                         db, db_lock,
                         query=query,
                         fields=["name", "info_hash"]
@@ -179,7 +81,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             if request.remote_addr == api_access_host:
                 info_hash = request.args.get("info_hash")
                 if info_hash:
-                    result, elapsed_time = __db_get_torrent_details(db, db_lock, info_hash)
+                    result, elapsed_time = db_get_torrent_details(db, db_lock, info_hash)
                     return jsonify({"result": result, "elapsed_time": elapsed_time})
                 else:
                     return jsonify({"result": {"code": 404, "message": "empty \"info_hash\" argument"}})
@@ -190,7 +92,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         def api_latest():
             if request.remote_addr == api_access_host:
                 limit = min(int(request.args.get("limit", default=1)), 100)
-                result, elapsed_time = __db_get_last_torrents(
+                result, elapsed_time = db_get_last_torrents(
                     db, db_lock,
                     fields=["name", "info_hash"],
                     limit=limit
@@ -223,8 +125,8 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 "results": map(lambda item: {
                     "info_hash": item["info_hash"],
                     "title": item["name"],
-                    "size": __get_files_size(item["files"]),
-                    "files": __get_files_list(item["files"], first_ten=True),
+                    "size": get_files_size(item["files"]),
+                    "files": get_files_list(item["files"], first_ten=True),
                     "files_count": len(item["files"])
                 }, items[(page - 1) * results_per_page: (page - 1) * results_per_page + results_per_page])
             }
@@ -237,7 +139,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             page = max(int(request.args.get("p", default=1)), 1)
 
             if query:
-                results, elapsed_time = __db_search_torrents(
+                results, elapsed_time = db_search_torrents(
                     db, db_lock,
                     query=query,
                     fields=["name", "files", "info_hash"]
@@ -250,7 +152,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         def latest():
             page = max(int(request.args.get("p", default=1)), 1)
 
-            results, elapsed_time = __db_get_last_torrents(
+            results, elapsed_time = db_get_last_torrents(
                 db, db_lock,
                 fields=["name", "files", "info_hash"]
             )
@@ -263,15 +165,15 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             info_hash = request.args.get("t")
 
             if info_hash:
-                result, _ = __db_get_torrent_details(db, db_lock, info_hash)
+                result, _ = db_get_torrent_details(db, db_lock, info_hash)
 
                 if result:
                     arguments = {
                         "query": query,
                         "title": result["name"],
-                        "size": __get_files_size(result["files"]),
+                        "size": get_files_size(result["files"]),
                         "info_hash": result["info_hash"],
-                        "files": __get_files_list(result["files"])
+                        "files": get_files_list(result["files"])
                     }
 
                     return render_template("details.html", **arguments)
