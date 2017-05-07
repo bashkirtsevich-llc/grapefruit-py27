@@ -7,11 +7,23 @@
         {% include "navigation/button.html" %}
       {% endwith %}
 
+      {% set vars = {"has_elipsis": False} %}
+
       {% for n in range(total_pages) %}
-        {% with button_disabled=(n + 1 == page),
-                page_index=(n + 1)%}
-          {% include "navigation/button.html" %}
-        {% endwith %}
+        {% if n in [0, 1] or
+              n in [total_pages - 2, total_pages-1] or
+              n >= page - 3 and n < page + 2 %}
+          {% with button_disabled=(n + 1 == page),
+                  page_index=(n + 1)%}
+            {% include "navigation/button.html" %}
+          {% endwith %}
+          {% set _ = vars.update({"has_elipsis": False}) %}
+        {% else %}
+          {% if not vars["has_elipsis"] %}
+            <span class="ellipsis">…</span>
+            {% set _ = vars.update({"has_elipsis": True}) %}
+          {% endif %}
+        {% endif %}
       {% endfor %}
 
       {% with button_disabled=(page >= total_pages),
