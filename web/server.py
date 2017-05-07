@@ -140,6 +140,10 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             s = urllib.quote_plus(s)
             return Markup(s)
 
+        @app.errorhandler(403)
+        def page_not_found(e):
+            return render_template("error.html", error_code=403), 403
+
         @app.errorhandler(404)
         def page_not_found(e):
             return render_template("error.html", error_code=404), 404
