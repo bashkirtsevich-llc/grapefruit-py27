@@ -968,6 +968,7 @@ div.mgline:hover .mctitle a {
         margin: 0;
         padding-left: 0;
         overflow: hidden;
+        margin-top: 85px;
     }
     .right-content {
         display: none;
