@@ -1,6 +1,8 @@
-flask==0.11.1
-pymongo==3.3.1
-twisted==16.6.0
-rpcudp==2.1
+Flask==0.11.1
+Twisted==16.6.0
 bencode==1.0
+rpcudp==2.1
+MarkupSafe==1.0
+pymongo==3.3.1
 zope.interface==4.3.3
+zope==4.0
