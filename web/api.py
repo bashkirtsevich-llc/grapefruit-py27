@@ -21,19 +21,17 @@ def db_search_torrents(db, db_lock, query, fields, offset=0, limit=0):
                 {"name": {"$exists": True}},
                 {"files": {"$exists": True}}]},
             projection=projection,
-            sort=[("score", {"$meta": "textScore"})],
-            skip=offset,
-            limit=limit
+            sort=[("score", {"$meta": "textScore"})]
         )
 
     if cursor:
-        results = list(cursor)
+        results_count, results = cursor.count(), list(cursor.skip(offset).limit(limit))
     else:
-        results = []
+        results_count, results = 0, []
 
     elapsed_time = time() - start_time
 
-    return results, elapsed_time
+    return results_count, results, elapsed_time
 
 
 def db_get_torrent_details(db, db_lock, info_hash):
@@ -74,16 +72,14 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
                 {"name": {"$exists": True}},
                 {"files": {"$exists": True}}]},
             projection=projection,
-            sort=[("_id", DESCENDING)],
-            skip=offset,
-            limit=limit
+            sort=[("_id", DESCENDING)]
         )
 
     if cursor:
-        results = list(cursor)
+        results_count, results = cursor.count(), list(cursor.skip(offset).limit(limit))
     else:
-        results = []
+        results_count, results = 0, []
 
     elapsed_time = time() - start_time
 
-    return results, elapsed_time
+    return results_count, results, elapsed_time

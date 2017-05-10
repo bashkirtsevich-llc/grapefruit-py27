@@ -68,14 +68,14 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 limit = min(abs(int(request.args.get("limit", default=100))), 100)
 
                 if query:
-                    results, elapsed_time = db_search_torrents(
+                    results_count, results, elapsed_time = db_search_torrents(
                         db, db_lock,
                         query=query,
                         fields=["name", "info_hash"],
                         offset=offset,
                         limit=limit
                     )
-                    return jsonify({"result": results, "elapsed_time": elapsed_time})
+                    return jsonify({"result": results, "count": results_count, "elapsed_time": elapsed_time})
                 else:
                     return jsonify({"result": {"code": 404, "message": "empty \"query\" argument"}})
             else:
@@ -87,13 +87,13 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 offset = abs(int(request.args.get("offset", default=0)))
                 limit = min(abs(int(request.args.get("limit", default=100))), 100)
 
-                result, elapsed_time = db_get_last_torrents(
+                results_count, results, elapsed_time = db_get_last_torrents(
                     db, db_lock,
                     fields=["name", "info_hash"],
                     offset=offset,
                     limit=limit
                 )
-                return jsonify({"result": result, "elapsed_time": elapsed_time})
+                return jsonify({"result": results, "count": results_count, "elapsed_time": elapsed_time})
             else:
                 abort(403)
 
@@ -120,15 +120,15 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                                            {"files": {"$exists": True}}]}
                                    ).count())
 
-        def render_results(source_url, query, page, results, elapsed_time):
+        def render_results(source_url, query, page, results, results_count, elapsed_time):
             items = list(results)
 
             arguments = {
                 "source_url": source_url,
                 "query": query,
                 "page": page,
-                "total_pages": len(items) / results_per_page + (1 if len(items) % results_per_page != 0 else 0),
-                "total_count": len(items),
+                "total_pages": results_count / results_per_page + (1 if results_count % results_per_page != 0 else 0),
+                "total_count": results_count,
                 "time_elapsed": round(elapsed_time, 3),
                 "results": map(lambda item: {
                     "info_hash": item["info_hash"],
@@ -136,7 +136,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                     "size": get_files_size(item["files"]),
                     "files": get_files_list(item["files"], first_ten=True),
                     "files_count": len(item["files"])
-                }, items[(page - 1) * results_per_page: (page - 1) * results_per_page + results_per_page])
+                }, items)
             }
 
             return render_template("results.html", **arguments)
@@ -147,12 +147,14 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             page = max(int(request.args.get("p", default=1)), 1)
 
             if query:
-                results, elapsed_time = db_search_torrents(
+                results_count, results, elapsed_time = db_search_torrents(
                     db, db_lock,
                     query=query,
-                    fields=["name", "files", "info_hash"]
+                    fields=["name", "files", "info_hash"],
+                    limit=results_per_page,
+                    offset=(page - 1) * results_per_page
                 )
-                return render_results("/search", query, page, results, elapsed_time)
+                return render_results("/search", query, page, results, results_count, elapsed_time)
             else:
                 return redirect("/")
 
@@ -160,12 +162,14 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         def latest():
             page = max(int(request.args.get("p", default=1)), 1)
 
-            results, elapsed_time = db_get_last_torrents(
+            results_count, results, elapsed_time = db_get_last_torrents(
                 db, db_lock,
-                fields=["name", "files", "info_hash"]
+                fields=["name", "files", "info_hash"],
+                limit=results_per_page,
+                offset=(page - 1) * results_per_page
             )
 
-            return render_results("/latest", "", page, results, elapsed_time)
+            return render_results("/latest", "", page, results, min(results_count, 100), elapsed_time)
 
         @app.route("/details")
         def details():
