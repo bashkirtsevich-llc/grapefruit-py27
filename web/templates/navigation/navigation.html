@@ -10,7 +10,8 @@
       {% set vars = {"has_elipsis": False} %}
 
       {% for n in range(total_pages) %}
-        {% if n in [0, 1] or
+        {% if total_pages <= 10 or
+              n in [0, 1] or
               n in [total_pages - 2, total_pages-1] or
               n >= page - 3 and n < page + 2 %}
           {% with button_disabled=(n + 1 == page),
