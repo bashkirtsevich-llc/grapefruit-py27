@@ -3,7 +3,7 @@ from time import time
 from pymongo import DESCENDING
 
 
-def db_search_torrents(db, db_lock, query, fields):
+def db_search_torrents(db, db_lock, query, fields, offset=0, limit=0):
     assert isinstance(fields, list)
 
     projection = {"score": {"$meta": "textScore"}, "_id": False}
@@ -21,7 +21,9 @@ def db_search_torrents(db, db_lock, query, fields):
                 {"name": {"$exists": True}},
                 {"files": {"$exists": True}}]},
             projection=projection,
-            sort=[("score", {"$meta": "textScore"})]
+            sort=[("score", {"$meta": "textScore"})],
+            skip=offset,
+            limit=limit
         )
 
     if cursor:
@@ -55,7 +57,7 @@ def db_get_torrent_details(db, db_lock, info_hash):
     return result, elapsed_time
 
 
-def db_get_last_torrents(db, db_lock, fields, limit=100):
+def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
     assert isinstance(fields, list)
 
     projection = {"_id": False}
@@ -73,6 +75,7 @@ def db_get_last_torrents(db, db_lock, fields, limit=100):
                 {"files": {"$exists": True}}]},
             projection=projection,
             sort=[("_id", DESCENDING)],
+            skip=offset,
             limit=limit
         )
 

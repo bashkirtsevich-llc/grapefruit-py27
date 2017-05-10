@@ -64,15 +64,36 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         def api_search():
             if request.remote_addr == api_access_host:
                 query = request.args.get("query")
+                offset = abs(int(request.args.get("offset", default=0)))
+                limit = min(abs(int(request.args.get("limit", default=100))), 100)
+
                 if query:
                     results, elapsed_time = db_search_torrents(
                         db, db_lock,
                         query=query,
-                        fields=["name", "info_hash"]
+                        fields=["name", "info_hash"],
+                        offset=offset,
+                        limit=limit
                     )
                     return jsonify({"result": results, "elapsed_time": elapsed_time})
                 else:
                     return jsonify({"result": {"code": 404, "message": "empty \"query\" argument"}})
+            else:
+                abort(403)
+
+        @app.route("/api/latest")
+        def api_latest():
+            if request.remote_addr == api_access_host:
+                offset = abs(int(request.args.get("offset", default=0)))
+                limit = min(abs(int(request.args.get("limit", default=100))), 100)
+
+                result, elapsed_time = db_get_last_torrents(
+                    db, db_lock,
+                    fields=["name", "info_hash"],
+                    offset=offset,
+                    limit=limit
+                )
+                return jsonify({"result": result, "elapsed_time": elapsed_time})
             else:
                 abort(403)
 
@@ -85,19 +106,6 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                     return jsonify({"result": result, "elapsed_time": elapsed_time})
                 else:
                     return jsonify({"result": {"code": 404, "message": "empty \"info_hash\" argument"}})
-            else:
-                abort(403)
-
-        @app.route("/api/latest")
-        def api_latest():
-            if request.remote_addr == api_access_host:
-                limit = min(int(request.args.get("limit", default=1)), 100)
-                result, elapsed_time = db_get_last_torrents(
-                    db, db_lock,
-                    fields=["name", "info_hash"],
-                    limit=limit
-                )
-                return jsonify({"result": result, "elapsed_time": elapsed_time})
             else:
                 abort(403)
 
