@@ -1,5 +1,5 @@
 import urllib
-import math
+from __future__ import division
 
 from threading import Lock
 
