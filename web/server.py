@@ -1,4 +1,5 @@
 import urllib
+import math
 
 from threading import Lock
 
@@ -127,7 +128,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 "source_url": source_url,
                 "query": query,
                 "page": page,
-                "total_pages": results_count / results_per_page + (1 if results_count % results_per_page != 0 else 0),
+                "total_pages": int(math.ceil(results_count / results_per_page)),
                 "total_count": results_count,
                 "time_elapsed": round(elapsed_time, 3),
                 "results": map(lambda item: {
