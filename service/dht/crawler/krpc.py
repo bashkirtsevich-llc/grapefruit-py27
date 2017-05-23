@@ -17,7 +17,7 @@ from config import INITIAL_NODES, UDP_SERVER_BANDWIDTH
 from bencode import bencode, bdecode
 
 
-class KRPC(object):
+class UDPServer(object):
     def __init__(self, address):
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.__socket.bind(address)
@@ -52,7 +52,7 @@ class KRPC(object):
         return self.__socket.getsockname()
 
 
-class DHTProtocol(KRPC):
+class DHTProtocol(UDPServer):
     NEW_K = 1500
     TABLE_NUM = 160
     TOKEN_LENGTH = 5
