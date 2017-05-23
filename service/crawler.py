@@ -1,5 +1,6 @@
 from binascii import hexlify, unhexlify
 from pymongo import MongoClient
+from pymongo import ASCENDING
 from datetime import datetime
 from dht.common_utils import generate_node_id
 from dht.crawler.krpc import DHTProtocol
@@ -81,6 +82,13 @@ def start_crawler(mongodb_uri, port, node_id=None):
     mongodb_client = MongoClient(mongodb_uri)
     try:
         db = mongodb_client.grapefruit
+
+        if "host_port_id" not in db.crawler_route.index_information():
+            db.crawler_route.create_index([("local_node_host", ASCENDING),
+                                           ("local_node_port", ASCENDING),
+                                           ("local_node_id", ASCENDING)],
+                                     name="host_port_id",
+                                     unique=True)
 
         routing_table = __try_load_routing_table(db, "0.0.0.0", port, node_id)
 
