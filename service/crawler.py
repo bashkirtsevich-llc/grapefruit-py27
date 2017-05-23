@@ -5,38 +5,63 @@ from dht.common_utils import generate_node_id
 from dht.crawler.krpc import DHTProtocol
 
 
-def __get_routing_tables(db):
-    tables = list(db.crawler_route.find())
+def __try_load_routing_table(db, local_node_host, local_node_port, local_node_id=None):
+    cond_list = [{"local_node_host": local_node_host},
+                 {"local_node_port": local_node_port}]
 
-    for table in tables:
-        table["node_id"] = unhexlify(table["node_id"])
-        for bucket in table["routing_table"]:
-            for node in bucket:
-                node[0] = unhexlify(node[0])
+    if local_node_id:
+        cond_list.append({"local_node_id": local_node_id})
 
-    return tables
+    table = db.crawler_route.find_one({"$and": cond_list})
+
+    if table:
+        # Restore routing table
+        return {
+            # We must unhexlify all identifiers
+            "buckets": map(
+                lambda bucket: map(
+                    lambda node: [
+                        unhexlify(node[0]),  # node id (hex)
+                        node[1]],  # node address tuple (host, port)
+                    bucket),
+                table["buckets"]),
+            "local_node_host": table["local_node_host"],
+            "local_node_port": table["local_node_port"],
+            "local_node_id": unhexlify(table["local_node_id"])
+        }
+    else:
+        # Generate empty routing table
+        return {
+            "buckets": [],
+            "local_node_host": local_node_host,
+            "local_node_port": local_node_port,
+            "local_node_id": local_node_id if local_node_id else generate_node_id()
+        }
 
 
-def __store_routing_table(db, local_node_id, routing_table):
+def __store_routing_table(db, local_node_id, address, buckets):
     coll = db.crawler_route
 
-    local_node_id = hexlify(local_node_id)
-    for bucket in routing_table:
-        for node in bucket:
-            node[0] = hexlify(node[0])
+    node_id_hex = hexlify(local_node_id)
 
-    if coll.find_one({"node_id": local_node_id}):
-        coll.update({"node_id": local_node_id},
-                    {"$set": {"routing_table": routing_table}})
+    buckets_hex = map(
+        lambda bucket: map(
+            lambda node: [
+                hexlify(node[0]),  # node id (hex)
+                node[1]],  # node address tuple (host, port)
+            bucket),
+        buckets)
+
+    if coll.find_one({"local_node_id": node_id_hex}):
+        coll.update({"local_node_id": node_id_hex},
+                    {"$set": {"buckets": buckets_hex}})
     else:
         coll.insert({
-            "node_id": local_node_id,
-            "routing_table": routing_table
+            "buckets": buckets_hex,
+            "local_node_id": node_id_hex,
+            "local_node_host": address[0],
+            "local_node_port": address[1]
         })
-
-    for bucket in routing_table:
-        for node in bucket:
-            node[0] = unhexlify(node[0])
 
 
 def __store_info_hash(db, info_hash):
@@ -57,13 +82,16 @@ def start_crawler(mongodb_uri, port, node_id=None):
     try:
         db = mongodb_client.grapefruit
 
+        routing_table = __try_load_routing_table(db, "0.0.0.0", port, node_id)
+
         arguments = {
-            "node_id": node_id if node_id else generate_node_id(),
-            "routing_table": [],
-            "address": ("0.0.0.0", port),
+            "node_id": routing_table["local_node_id"],
+            "routing_table": routing_table["buckets"],
+            "address": (routing_table["local_node_host"],
+                        routing_table["local_node_port"]),
             "on_save_routing_table":
                 lambda local_node_id, routing_table, address:
-                __store_routing_table(db, local_node_id, routing_table),
+                __store_routing_table(db, local_node_id, address, routing_table),
             "on_get_peers":
                 lambda info_hash:
                 __store_info_hash(db, info_hash),
@@ -71,11 +99,6 @@ def start_crawler(mongodb_uri, port, node_id=None):
                 lambda info_hash, announce_host, announce_port:
                 __store_info_hash(db, info_hash)
         }
-
-        routing_tables = __get_routing_tables(db)
-
-        if routing_tables and routing_tables[0]["node_id"] == node_id:
-            arguments["routing_table"] = routing_tables[0]["routing_table"]
 
         protocol = DHTProtocol(**arguments)
         protocol.start()
