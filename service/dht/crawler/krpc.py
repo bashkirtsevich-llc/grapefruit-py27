@@ -278,3 +278,6 @@ class DHTProtocol(UDPServer):
 
         client_thread.start()
         server_thread.start()
+
+        client_thread.join()
+        server_thread.join()
