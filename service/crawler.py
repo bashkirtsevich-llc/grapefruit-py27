@@ -1,7 +1,8 @@
 from binascii import hexlify, unhexlify
 from pymongo import MongoClient
 from datetime import datetime
-from dht.crawler.node import Node
+from dht.common_utils import generate_node_id
+from dht.crawler.krpc import DHTProtocol
 
 
 def __get_routing_tables(db):
@@ -57,8 +58,8 @@ def start_crawler(mongodb_uri, port, node_id=None):
         db = mongodb_client.grapefruit
 
         arguments = {
-            "node_id": node_id,
-            "routing_table": None,
+            "node_id": node_id if node_id else generate_node_id(),
+            "routing_table": [],
             "address": ("0.0.0.0", port),
             "on_save_routing_table":
                 lambda local_node_id, routing_table, address:
@@ -76,7 +77,7 @@ def start_crawler(mongodb_uri, port, node_id=None):
         if routing_tables and routing_tables[0]["node_id"] == node_id:
             arguments["routing_table"] = routing_tables[0]["routing_table"]
 
-        node = Node(**arguments)
-        node.protocol.start()
+        protocol = DHTProtocol(**arguments)
+        protocol.start()
     finally:
         mongodb_client.close()
