@@ -83,7 +83,7 @@ def start_crawler(mongodb_uri, port, node_id=None):
     try:
         db = mongodb_client.grapefruit
 
-        if "host_port_id" not in db.crawler_route.index_information():
+        if "crawler_route" in db.collection_names() and "host_port_id" not in db.crawler_route.index_information():
             db.crawler_route.create_index([("local_node_host", ASCENDING),
                                            ("local_node_port", ASCENDING),
                                            ("local_node_id", ASCENDING)],

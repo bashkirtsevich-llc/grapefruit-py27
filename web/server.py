@@ -30,7 +30,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
 
         db_lock = Lock()
 
-        if "$**_text" not in db.torrents.index_information():
+        if "torrents" in db.collection_names() and "$**_text" not in db.torrents.index_information():
             db.torrents.create_index([("$**", TEXT)],
                                      name="$**_text",
                                      weights={"name": 3, "path": 2},
