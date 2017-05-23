@@ -16,7 +16,7 @@ def decode_nodes(message):
     if len(message) % 26 != 0:
         return nodes
 
-    for i in range(0, len(message), 26):
+    for i in xrange(0, len(message), 26):
         node_id = message[i: i + 20]
 
         try:
@@ -47,7 +47,7 @@ def xor(node_one_id, node_two_id):
     result = 0
 
     length = len(node_one_id)
-    for i in range(length):
+    for i in xrange(length):
         result = (result << 8) + (ord(node_one_id[i]) ^ ord(node_two_id[i]))
 
     return result
