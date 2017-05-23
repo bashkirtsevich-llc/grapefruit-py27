@@ -8,7 +8,7 @@ from random import randint
 
 
 def generate_id(length):
-    return reduce(lambda r, _: r + chr(randint(0, 255)), range(length), "")
+    return reduce(lambda r, _: r + chr(randint(0, 255)), xrange(length), "")
 
 
 def decode_nodes(message):
