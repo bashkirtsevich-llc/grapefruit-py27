@@ -1,7 +1,32 @@
 from config import *
 from service.crawler import start_crawler
+from multiprocessing import Process
+
+
+def start_crawlers(mongodb_uri, nodes_info):
+    """
+    :param mongodb_uri: Mongodb connection uri
+    :param nodes_info: List of node info dicts ({"port": 123, "node_id": "456..."})
+    :return: None
+    """
+    processes = []
+
+    for node_info in nodes_info:
+        args = {
+            "mongodb_uri": mongodb_uri,
+            "port": node_info["port"],
+            "node_id": node_info["node_id"]
+        }
+
+        p = Process(target=start_crawler, kwargs=args)
+        p.start()  # Startup new process
+
+        processes.append(p)
+
+    # Wait until all processes end
+    map(lambda process: process.join(), processes)
+
 
 if __name__ == '__main__':
-    start_crawler(mongodb_uri=MONGODB_URI,
-                  port=DHT_CRAWLER_PORT,
-                  node_id=DHT_CRAWLER_NODE_ID)
+    start_crawlers(mongodb_uri=MONGODB_URI,
+                   nodes_info=DHT_CRAWLER_NODES_INFO)

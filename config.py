@@ -4,10 +4,9 @@ WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = 8081
 WEB_SERVER_API_ACCESS_HOST = "127.0.0.1"  # IP address, who can use server API
 
-DHT_CRAWLER_PORT = 6882
 DHT_INDEXER_PORT = 6881
-
-DHT_CRAWLER_NODE_ID = None  # unhexlify("0f27e10c33db1fbcef63af3039370ee955885678")
 DHT_INDEXER_NODE_ID = None  # unhexlify("af1d003a5d93e94bfbbd57a6e6e05f5d7f8f92c6")
+
+DHT_CRAWLER_NODES_INFO = map(lambda port: {"port": port, "node_id": None}, xrange(6882, 6887))
 
 DHT_INDEXER_BOOTSTRAP_ADDRESS = ("router.bittorrent.com", 6881)
