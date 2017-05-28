@@ -96,7 +96,10 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                     offset=offset,
                     limit=limit
                 )
-                return jsonify({"result": results, "count": results_count, "elapsed_time": elapsed_time})
+                total_count = db_get_torrents_count(db, db_lock)
+
+                return jsonify({"result": results, "count": results_count, "total_count": total_count,
+                                "elapsed_time": elapsed_time})
             else:
                 abort(403)
 
