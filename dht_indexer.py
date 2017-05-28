@@ -1,4 +1,4 @@
-from config import *
+from dht_indexer_config import *
 from service.indexer import start_indexer
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
-from config import *
-from service.crawler import start_crawler
 from multiprocessing import Process
+
+from dht_crawler_config import MONGODB_URI, DHT_CRAWLER_NODES_INFO
+from service.crawler import start_crawler
 
 
 def start_crawlers(mongodb_uri, nodes_info):

@@ -1,7 +1,8 @@
 import logging
 import os
-from config import *
+
 from web.server import start_server
+from web_server_config import *
 
 if __name__ == '__main__':
     logging.basicConfig(filename=os.devnull,
