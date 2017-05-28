@@ -21,6 +21,7 @@ from utils import get_files_size
 from api import db_search_torrents
 from api import db_get_torrent_details
 from api import db_get_last_torrents
+from api import db_get_torrents_count
 
 
 def start_server(mongodb_uri, host, port, api_access_host=None):
@@ -116,11 +117,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/")
         def show_index():
             return render_template("index.html",
-                                   torrents_count=db.torrents.find(
-                                       {"$and": [
-                                           {"name": {"$exists": True}},
-                                           {"files": {"$exists": True}}]}
-                                   ).count())
+                                   torrents_count=db_get_torrents_count(db, db_lock))
 
         def render_results(source_url, query, page, results, results_count, elapsed_time):
             items = list(results)

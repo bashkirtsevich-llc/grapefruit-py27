@@ -83,3 +83,12 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
     elapsed_time = time() - start_time
 
     return results_count, results, elapsed_time
+
+
+def db_get_torrents_count(db, db_lock):
+    with db_lock:
+        return db.torrents.count(
+            filter={"$and": [
+                {"name": {"$exists": True}},
+                {"files": {"$exists": True}}]}
+        )
