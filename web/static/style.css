@@ -993,6 +993,7 @@ div.mgline:hover .mctitle a {
     .torrent-info {
         font-size: 12px;
         padding-top: 10px;
+        margin-top: 85px;
     }
     .torrent-meta-info dt {
         width: 55px;
