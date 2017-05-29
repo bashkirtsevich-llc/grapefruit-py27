@@ -1,7 +1,7 @@
 from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
-from random import shuffle
+from random import shuffle, randrange
 
 
 def __store_metadata(db, metadata, *args, **kwargs):
@@ -23,6 +23,7 @@ def __get_hash_iterator(db):
     # This method return fetch method, who will reload torrent list, when he is empty
     def load_torrents():
         MAX_ATTEMPTS_COUNT = 10
+        FETCH_LIMIT = 10
 
         # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
         db.torrents.remove(
@@ -34,22 +35,25 @@ def __get_hash_iterator(db):
         )
 
         # Find candidates to load
-        result = list(
-            db.torrents.find(
-                {"$and": [
-                    {"name": {"$exists": False}},
-                    {"files": {"$exists": False}},
-                    {"$or": [
-                        {"attempt": {"$exists": False}},
-                        {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
-                    ]}
+        cursor = db.torrents.find(
+            {"$and": [
+                {"name": {"$exists": False}},
+                {"files": {"$exists": False}},
+                {"$or": [
+                    {"attempt": {"$exists": False}},
+                    {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
                 ]}
-            )
+            ]}
         )
 
-        shuffle(result)
-
-        return result
+        if cursor:
+            return list(
+                cursor.skip(
+                    randrange(max(cursor.count() - FETCH_LIMIT, 1))
+                ).limit(FETCH_LIMIT)
+            )
+        else:
+            return []
 
     # Local torrent items storage, using for closure from fetch_next_item
     torrents = []
