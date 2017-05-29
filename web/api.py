@@ -92,3 +92,29 @@ def db_get_torrents_count(db, db_lock):
                 {"name": {"$exists": True}},
                 {"files": {"$exists": True}}]}
         )
+
+
+def db_torrent_exists(db, db_lock, info_hash, has_metadata=False):
+    with db_lock:
+        cond = [{"info_hash": info_hash}]
+
+        if has_metadata:
+            cond.extend([{"name": {"$exists": True}},
+                         {"files": {"$exists": True}}])
+
+        return db.torrents.count(
+            filter={"$and": cond}
+        ) > 0
+
+
+def db_insert_torrent(db, db_lock, info_hash, name=None, files=None):
+    with db_lock:
+        document = {"info_hash": info_hash}
+
+        if name:
+            document["name"] = name
+
+        if files:
+            document["files"] = files
+
+        db.torrents.insert_one(document)

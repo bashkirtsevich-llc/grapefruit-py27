@@ -18,10 +18,7 @@ from pymongo import MongoClient, TEXT, ASCENDING
 from utils import get_files_list
 from utils import get_files_size
 
-from api import db_search_torrents
-from api import db_get_torrent_details
-from api import db_get_last_torrents
-from api import db_get_torrents_count
+from api import *
 
 
 def start_server(mongodb_uri, host, port, api_access_host=None):
@@ -121,17 +118,35 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/details")
         def api_details():
             if request.remote_addr == api_access_host:
-                info_hash = request.args.get("info_hash")
+                info_hash = request.args.get("info_hash", None)
                 if info_hash:
                     result, elapsed_time = db_get_torrent_details(db, db_lock, info_hash)
                     return jsonify({"result": result, "elapsed_time": elapsed_time})
                 else:
-                    return jsonify({"result": {"code": 404, "message": "empty \"info_hash\" argument"}})
+                    return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
+            else:
+                abort(403)
+
+        @app.route("/api/add_torrent", methods=['POST'])
+        def api_add_torrent():
+            if request.remote_addr == api_access_host:
+                info_hash = request.form.get("info_hash", None)
+                metadata = request.form.get("metadata", None)
+
+                if info_hash:
+                    if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
+                        return jsonify({"result": {"code": 409, "message": "already exists"}})
+                    elif metadata:
+                        db_insert_torrent(db, db_lock, info_hash, metadata["name"], metadata["files"])
+                        return jsonify({"result": {"code": 200, "message": "OK"}})
+                    else:
+                        return jsonify({"result": {"code": 500, "message": "bad request"}})
+                else:
+                    return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
             else:
                 abort(403)
 
         # Regular http requests
-
         @app.route("/")
         def show_index():
             return render_template("index.html",
