@@ -35,9 +35,9 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             torrents = db.torrents
             torrents_indexes = db.torrents.index_information()
             # Fulltext wildcard index
-            if "$**_text" not in torrents_indexes:
+            if "fulltext_index" not in torrents_indexes:
                 torrents.create_index([("$**", TEXT)],
-                                      name="$**_text",
+                                      name="fulltext_index",
                                       weights={"name": 3, "path": 2},
                                       default_language="english")
 
