@@ -74,7 +74,7 @@ def __store_info_hash(db, info_hash):
     })
 
     # Store "info_hash" in "torrents" collection for quick find, when loader will load data
-    if db.torrents.find_one({"info_hash": hex_info_hash}) is None:
+    if db.torrents.count({"info_hash": hex_info_hash}) > 0 is None:
         db.torrents.insert_one({"info_hash": hex_info_hash})
 
 
@@ -87,8 +87,8 @@ def start_crawler(mongodb_uri, port, node_id=None):
             db.crawler_route.create_index([("local_node_host", ASCENDING),
                                            ("local_node_port", ASCENDING),
                                            ("local_node_id", ASCENDING)],
-                                     name="host_port_id",
-                                     unique=True)
+                                          name="host_port_id",
+                                          unique=True)
 
         routing_table = __try_load_routing_table(db, "0.0.0.0", port, node_id)
 
