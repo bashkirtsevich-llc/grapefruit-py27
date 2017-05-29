@@ -13,7 +13,7 @@ from flask import request
 
 from markupsafe import Markup
 
-from pymongo import MongoClient, TEXT
+from pymongo import MongoClient, TEXT, ASCENDING
 
 from utils import get_files_list
 from utils import get_files_size
@@ -31,11 +31,26 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
 
         db_lock = Lock()
 
-        if "torrents" in db.collection_names() and "$**_text" not in db.torrents.index_information():
-            db.torrents.create_index([("$**", TEXT)],
-                                     name="$**_text",
-                                     weights={"name": 3, "path": 2},
-                                     default_language="english")
+        if "torrents" in db.collection_names():
+            torrents = db.torrents
+            torrents_indexes = db.torrents.index_information()
+            # Fulltext wildcard index
+            if "$**_text" not in torrents_indexes:
+                torrents.create_index([("$**", TEXT)],
+                                      name="$**_text",
+                                      weights={"name": 3, "path": 2},
+                                      default_language="english")
+
+            # Index by "info_hash" field
+            if "info_hash" not in torrents_indexes:
+                torrents.create_index([("info_hash", ASCENDING)],
+                                      name="info_hash",
+                                      unique=True)
+
+            # Index by "attempt" field
+            if "attempt" not in torrents_indexes:
+                torrents.create_index([("attempt", ASCENDING)],
+                                      name="attempt")
 
         app = Flask(__name__, static_url_path="")
 
