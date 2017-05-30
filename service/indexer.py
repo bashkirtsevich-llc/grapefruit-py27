@@ -1,7 +1,7 @@
 from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
-from random import shuffle, randrange
+from random import randrange
 
 
 def __store_metadata(db, metadata, *args, **kwargs):
