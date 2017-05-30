@@ -161,14 +161,10 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/fetch_torrents_for_load")
         def api_fetch_torrents_for_load():
             if request.remote_addr == api_access_host:
-                info_hash = request.form.get("info_hash", None)
                 limit = request.form.get("limit", 10)
                 max_access_count = request.form.get("max_access_count", 3)
 
-                if info_hash:
-                    return jsonify({"result": db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count)})
-                else:
-                    return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
+                return jsonify({"result": db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count)})
             else:
                 abort(403)
 
