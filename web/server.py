@@ -45,9 +45,9 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                                       unique=True)
 
             # Index by "attempt" field
-            if "attempt" not in torrents_indexes:
-                torrents.create_index([("attempt", ASCENDING)],
-                                      name="attempt")
+            if "access_count" not in torrents_indexes:
+                torrents.create_index([("access_count", ASCENDING)],
+                                      name="access_count")
 
             # Index by "timestamp" field
             if "timestamp" not in torrents_indexes:
@@ -165,10 +165,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 limit = request.form.get("limit", 10)
 
                 if info_hash:
-                    # Delete unreachable torrents
-                    db_delete_unreachable_torrents(db, db_lock)
-
-                    return jsonify({"result": db_fetch_not_loaded_torrents(db, db_lock, limit)})
+                    return jsonify({"result": db_fetch_not_indexed_torrents(db, db_lock, limit)})
                 else:
                     return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
             else:
