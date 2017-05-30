@@ -142,10 +142,17 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                     if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
                         return jsonify({"result": {"code": 409, "message": "already exists"}})
                     elif metadata:
-                        db_insert_torrent(db, db_lock, info_hash, metadata["name"], metadata["files"])
-                        return jsonify({"result": {"code": 200, "message": "OK"}})
+                        if metadata.get("info_hash", info_hash) == info_hash:
+                            md = {"timestamp": datetime.utcnow()}
+                            md.update(metadata)
+
+                            db_insert_or_update_torrent(db, db_lock, info_hash, md)
+                            return jsonify({"result": {"code": 200, "message": "OK"}})
+                        else:
+                            return jsonify({"result": {"code": 500,
+                                                       "message": "invalid extra field \"info_hash\" in metadata"}})
                     else:
-                        return jsonify({"result": {"code": 500, "message": "bad request"}})
+                        db_insert_or_update_torrent(db, db_lock, info_hash)
                 else:
                     return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
             else:

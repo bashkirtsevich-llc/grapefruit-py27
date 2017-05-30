@@ -1,4 +1,5 @@
 from time import time
+from datetime import datetime
 
 from pymongo import DESCENDING
 
@@ -107,14 +108,14 @@ def db_torrent_exists(db, db_lock, info_hash, has_metadata=False):
         ) > 0
 
 
-def db_insert_torrent(db, db_lock, info_hash, name=None, files=None):
+def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
     with db_lock:
         document = {"info_hash": info_hash}
 
-        if name:
-            document["name"] = name
+        if metadata:
+            document.update(metadata)
 
-        if files:
-            document["files"] = files
-
-        db.torrents.insert_one(document)
+        if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
+            db.torrents.update({"info_hash": info_hash}, {"$set": metadata})
+        else:
+            db.torrents.insert_one(document)
