@@ -1,4 +1,4 @@
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 from twisted.internet import reactor
 from bittorrent.bittorrent import ConnectionChain
 from dht.server.network import Server
@@ -55,7 +55,9 @@ def load_torrent(bootstrap_address, port, **kwargs):
                 on_bootstrap_done(lambda info_hash, on_torrent_loaded, on_torrent_not_found=None, schedule=0:
                                   # Invoke "get_peers" after "schedule" seconds
                                   reactor.callLater(schedule, get_peers,
-                                                    server, info_hash, on_torrent_loaded, on_torrent_not_found))
+                                                    server,
+                                                    unhexlify(info_hash) if info_hash else None,
+                                                    on_torrent_loaded, on_torrent_not_found))
         else:
             on_bootstrap_failed = kwargs.get("on_bootstrap_failed", None)
 

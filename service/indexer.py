@@ -1,5 +1,4 @@
 import requests
-from binascii import unhexlify
 from torrent import load_torrent
 
 
@@ -47,11 +46,8 @@ def __get_hash_iterator(api_url):
 
 
 def __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash):
-    item = get_next_info_hash()
-    info_hash = unhexlify(item) if item else None
-
     try_load_metadata(
-        info_hash=info_hash,
+        info_hash=get_next_info_hash(),
         schedule=60,  # Wait 60 seconds
         on_torrent_loaded=lambda metadata: __store_metadata(api_url, metadata, try_load_metadata, get_next_info_hash),
         on_torrent_not_found=lambda: __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash)
