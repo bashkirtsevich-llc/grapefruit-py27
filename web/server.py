@@ -13,7 +13,7 @@ from flask import request
 
 from markupsafe import Markup
 
-from pymongo import MongoClient, TEXT, ASCENDING
+from pymongo import MongoClient, TEXT, ASCENDING, DESCENDING
 
 from utils import get_files_list
 from utils import get_files_size
@@ -48,6 +48,11 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             if "attempt" not in torrents_indexes:
                 torrents.create_index([("attempt", ASCENDING)],
                                       name="attempt")
+
+            # Index by "timestamp" field
+            if "timestamp" not in torrents_indexes:
+                torrents.create_index([("timestamp", DESCENDING)],
+                                      name="timestamp")
 
         app = Flask(__name__, static_url_path="")
 

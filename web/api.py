@@ -72,7 +72,7 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
                 {"name": {"$exists": True}},
                 {"files": {"$exists": True}}]},
             projection=projection,
-            sort=[("_id", DESCENDING)]
+            sort=[("timestamp", DESCENDING)]
         )
 
     if cursor:
