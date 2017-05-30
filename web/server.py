@@ -13,12 +13,12 @@ from flask import request
 
 from markupsafe import Markup
 
-from pymongo import MongoClient, TEXT, ASCENDING, DESCENDING
+from pymongo import MongoClient, TEXT, ASCENDING
 
-from utils import get_files_list
-from utils import get_files_size
-
+from utils import *
 from api import *
+
+from datetime import datetime
 
 
 def start_server(mongodb_uri, host, port, api_access_host=None):
