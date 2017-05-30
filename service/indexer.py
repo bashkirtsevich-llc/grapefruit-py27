@@ -2,6 +2,7 @@ from binascii import unhexlify
 from pymongo import MongoClient
 from torrent import load_torrent
 from random import randrange
+from datetime import datetime
 
 
 def __store_metadata(db, metadata, *args, **kwargs):
@@ -11,7 +12,8 @@ def __store_metadata(db, metadata, *args, **kwargs):
         value = {"name": metadata["name"],
                  "files": map(lambda f: {"path": f["path"],
                                          "length": f["length"]},
-                              metadata["files"])}
+                              metadata["files"]),
+                 "timestamp": datetime.utcnow()}
 
         db.torrents.update(key, {"$set": value,
                                  "$unset": {"attempt": ""}})
