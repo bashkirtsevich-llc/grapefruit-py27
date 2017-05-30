@@ -1,59 +1,33 @@
+import requests
 from binascii import unhexlify
-from pymongo import MongoClient
 from torrent import load_torrent
-from random import randrange
-from datetime import datetime
 
 
-def __store_metadata(db, metadata, *args, **kwargs):
+def __store_metadata(api_url, metadata, *args, **kwargs):
     try:
-        key = {"info_hash": metadata["info_hash"]}
-
-        value = {"name": metadata["name"],
-                 "files": map(lambda f: {"path": f["path"],
-                                         "length": f["length"]},
-                              metadata["files"]),
-                 "timestamp": datetime.utcnow()}
-
-        db.torrents.update(key, {"$set": value,
-                                 "$unset": {"attempt": ""}})
+        url = "{0}/add_torrent".format(api_url)
+        data = {"info_hash": metadata["info_hash"],
+                "metadata": {
+                    "name": metadata["name"],
+                    "files": map(lambda f: {"path": f["path"],
+                                            "length": f["length"]},
+                                 metadata["files"])}
+                }
+        requests.post(url, data)
     finally:
-        __index_next_info_hash(db, *args, **kwargs)
+        __index_next_info_hash(api_url, *args, **kwargs)
 
 
-def __get_hash_iterator(db):
+def __get_hash_iterator(api_url):
     # This method return fetch method, who will reload torrent list, when he is empty
     def load_torrents():
-        MAX_ATTEMPTS_COUNT = 10
-        FETCH_LIMIT = 10
+        url = "{0}/fetch_torrents_for_load".format(api_url)
 
-        # Remove torrents with too much attempts count (ignore after "MAX_ATTEMPTS_COUNT" attempts)
-        db.torrents.remove(
-            {"$and": [
-                {"name": {"$exists": False}},
-                {"files": {"$exists": False}},
-                {"attempt": {"$gte": MAX_ATTEMPTS_COUNT}}
-            ]}
-        )
+        api_response = requests.get(url).json()
 
-        # Find candidates to load
-        cursor = db.torrents.find(
-            {"$and": [
-                {"name": {"$exists": False}},
-                {"files": {"$exists": False}},
-                {"$or": [
-                    {"attempt": {"$exists": False}},
-                    {"attempt": {"$lt": MAX_ATTEMPTS_COUNT}}
-                ]}
-            ]}
-        )
-
-        if cursor:
-            return list(
-                cursor.skip(
-                    randrange(max(cursor.count() - FETCH_LIMIT, 1))
-                ).limit(FETCH_LIMIT)
-            )
+        results = api_response["result"]
+        if results:
+            return results
         else:
             return []
 
@@ -72,41 +46,26 @@ def __get_hash_iterator(db):
     return fetch_next_item
 
 
-def __index_next_info_hash(db, try_load_metadata, get_next_torrent):
-    item = get_next_torrent()
-    if item:
-        info_hash = item["info_hash"]
-
-        # Increase torrent attempts count
-        db.torrents.update({"info_hash": info_hash},
-                           {"$set": {"attempt": item.get("attempt", 0) + 1}})
-
-        info_hash = unhexlify(info_hash)
-    else:
-        info_hash = None
+def __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash):
+    item = get_next_info_hash()
+    info_hash = unhexlify(item) if item else None
 
     try_load_metadata(
         info_hash=info_hash,
         schedule=60,  # Wait 60 seconds
-        on_torrent_loaded=lambda metadata: __store_metadata(db, metadata, try_load_metadata, get_next_torrent),
-        on_torrent_not_found=lambda: __index_next_info_hash(db, try_load_metadata, get_next_torrent)
+        on_torrent_loaded=lambda metadata: __store_metadata(api_url, metadata, try_load_metadata, get_next_info_hash),
+        on_torrent_not_found=lambda: __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash)
     )
 
 
-def __index_torrents(db, try_load_metadata):
-    iterator = __get_hash_iterator(db)
+def __index_torrents(api_url, try_load_metadata):
+    iterator = __get_hash_iterator(api_url)
 
     for _ in xrange(10):
-        __index_next_info_hash(db, try_load_metadata, iterator)
+        __index_next_info_hash(api_url, try_load_metadata, iterator)
 
 
-def start_indexer(mongodb_uri, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
-    mongodb_client = MongoClient(mongodb_uri)
-    try:
-        db = mongodb_client.grapefruit
-
-        load_torrent(bootstrap_node_address, port,
-                     node_id=node_id,
-                     on_bootstrap_done=lambda try_load_metadata: __index_torrents(db, try_load_metadata))
-    finally:
-        mongodb_client.close()
+def start_indexer(web_server_api_url, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
+    load_torrent(bootstrap_node_address, port,
+                 node_id=node_id,
+                 on_bootstrap_done=lambda try_load_metadata: __index_torrents(web_server_api_url, try_load_metadata))
