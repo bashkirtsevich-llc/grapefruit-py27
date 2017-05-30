@@ -125,27 +125,29 @@ def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
     with db_lock:
         # Find candidates to load
         cursor = db.torrents.find(
-            {"$and": [
+            filter={"$and": [
                 {"name": {"$exists": False}},
                 {"files": {"$exists": False}},
                 {"$or": [
                     {"access_count": {"$exists": False}},
                     {"access_count": {"$lt": max_access_count}}
                 ]}
-            ]}
+            ]},
+            projection={"_id": False,
+                        "info_hash": True}
         )
 
         if cursor:
-            result = list(
-                cursor.skip(
-                    randrange(max(cursor.count() - limit, 1))
-                ).limit(limit)
+            # Return info_hashes only
+            result = map(
+                lambda item: item["info_hash"],
+                cursor.skip(randrange(max(cursor.count() - limit, 1))).limit(limit)
             )
 
             # Increase access_count value
-            for item in result:
+            for info_hash in result:
                 db.torrents.update(
-                    {"info_hash": item["info_hash"]},
+                    {"info_hash": info_hash},
                     {"$inc": {"access_count": 1}}
                 )
 
