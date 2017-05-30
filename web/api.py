@@ -1,5 +1,5 @@
 from time import time
-from datetime import datetime
+from random import randrange
 
 from pymongo import DESCENDING
 
@@ -119,3 +119,39 @@ def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
             db.torrents.update({"info_hash": info_hash}, {"$set": metadata})
         else:
             db.torrents.insert_one(document)
+
+
+def db_delete_unreachable_torrents(db, db_lock, max_attempts_count=10):
+    with db_lock:
+        # remove unreached torrents (when attempt >= 10)
+        db.torrents.remove(
+            {"$and": [
+                {"name": {"$exists": False}},
+                {"files": {"$exists": False}},
+                {"attempt": {"$gte": max_attempts_count}}
+            ]}
+        )
+
+
+def db_fetch_not_loaded_torrents(db, db_lock, limit=10, max_attempts_filter=10):
+    with db_lock:
+        # Find candidates to load
+        cursor = db.torrents.find(
+            {"$and": [
+                {"name": {"$exists": False}},
+                {"files": {"$exists": False}},
+                {"$or": [
+                    {"attempt": {"$exists": False}},
+                    {"attempt": {"$lt": max_attempts_filter}}
+                ]}
+            ]}
+        )
+
+        if cursor:
+            return list(
+                cursor.skip(
+                    randrange(max(cursor.count() - limit, 1))
+                ).limit(limit)
+            )
+        else:
+            return []

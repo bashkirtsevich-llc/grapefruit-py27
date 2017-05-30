@@ -158,6 +158,22 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             else:
                 abort(403)
 
+        @app.route("/api/fetch_torrents_for_load")
+        def api_fetch_torrents_for_load():
+            if request.remote_addr == api_access_host:
+                info_hash = request.form.get("info_hash", None)
+                limit = request.form.get("limit", 10)
+
+                if info_hash:
+                    # Delete unreachable torrents
+                    db_delete_unreachable_torrents(db, db_lock)
+
+                    return jsonify({"result": db_fetch_not_loaded_torrents(db, db_lock, limit)})
+                else:
+                    return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
+            else:
+                abort(403)
+
         # Regular http requests
         @app.route("/")
         def show_index():
