@@ -76,7 +76,7 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
         )
 
     if cursor:
-        results_count, results = min(cursor.count(), limit), list(cursor.skip(offset).limit(limit))
+        results_count, results = min(cursor.count(), 100), list(cursor.skip(offset).limit(limit))
     else:
         results_count, results = 0, []
 
