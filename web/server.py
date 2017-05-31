@@ -28,31 +28,28 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
 
         db_lock = Lock()
 
-        if "torrents" in db.collection_names():
-            torrents = db.torrents
-            torrents_indexes = db.torrents.index_information()
-            # Fulltext wildcard index
-            if "fulltext_index" not in torrents_indexes:
-                torrents.create_index([("$**", TEXT)],
-                                      name="fulltext_index",
-                                      weights={"name": 3, "path": 2},
-                                      default_language="english")
+        for coll_name in ["crawler_route", "hashes", "torrents"]:
+            if coll_name not in db.collection_names():
+                db.create_collection(coll_name)
 
-            # Index by "info_hash" field
-            if "info_hash" not in torrents_indexes:
-                torrents.create_index([("info_hash", ASCENDING)],
-                                      name="info_hash",
-                                      unique=True)
+        # Index by local node info for crawler_route
+        if "host_port_id" not in db.crawler_route.index_information():
+            db.crawler_route.create_index(keys=[("local_node_host", ASCENDING),
+                                                ("local_node_port", ASCENDING),
+                                                ("local_node_id", ASCENDING)],
+                                          name="host_port_id",
+                                          unique=True)
 
-            # Index by "attempt" field
-            if "access_count" not in torrents_indexes:
-                torrents.create_index([("access_count", ASCENDING)],
-                                      name="access_count")
+        torrents = db.torrents
+        torrents_indexes = torrents.index_information()
 
-            # Index by "timestamp" field
-            if "timestamp" not in torrents_indexes:
-                torrents.create_index([("timestamp", DESCENDING)],
-                                      name="timestamp")
+        for index_info in [{"name": "fulltext_index", "keys": [("$**", TEXT)], "weights": {"name": 3, "path": 2},
+                            "default_language": "english"},
+                           {"name": "info_hash", "keys": [("info_hash", ASCENDING)], "unique": True},
+                           {"name": "access_count", "keys": [("access_count", ASCENDING)]},
+                           {"name": "timestamp", "keys": [("timestamp", DESCENDING)]}]:
+            if index_info["name"] not in torrents_indexes:
+                torrents.create_index(**index_info)
 
         app = Flask(__name__, static_url_path="")
 
