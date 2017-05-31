@@ -155,6 +155,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                                 }})
                         else:
                             db_insert_or_update_torrent(db, db_lock, info_hash)
+                            return jsonify({"result": {"code": 202, "message": "Accepted"}})
                     finally:
                         # Write info_hash into log ("db.hashes") collection
                         db_log_info_hash(db, db_lock, info_hash, timestamp)
