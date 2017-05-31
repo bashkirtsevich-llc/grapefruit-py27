@@ -12,7 +12,7 @@ def __store_metadata(api_url, metadata, *args, **kwargs):
                                             "length": f["length"]},
                                  metadata["files"])}
                 }
-        requests.post(url, data)
+        requests.post(url, data=data)
     finally:
         __index_next_info_hash(api_url, *args, **kwargs)
 
@@ -22,7 +22,7 @@ def __get_hash_iterator(api_url):
     def load_torrents():
         url = "{0}/fetch_torrents_for_load".format(api_url)
 
-        api_response = requests.get(url).json()
+        api_response = requests.get(url, params={"inc_access_count": True}).json()
 
         results = api_response["result"]
         if results:
