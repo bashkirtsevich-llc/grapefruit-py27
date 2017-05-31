@@ -178,6 +178,47 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             else:
                 abort(403)
 
+        @app.route("/api/load_routing_table")
+        def api_load_routing_table():
+            if request.remote_addr == api_access_host:
+                local_node_host = request.form.get("local_node_host", None)
+                local_node_port = request.form.get("local_node_port", None)
+                local_node_id = request.form.get("local_node_id", None)
+
+                if local_node_host and local_node_port:
+                    result = db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_node_id)
+
+                    if result:
+                        return jsonify({"result": result})
+                    else:
+                        return jsonify({"result": {"code": 404, "message": "not found"}})
+                else:
+                    return jsonify({"result": {
+                        "code": 500,
+                        "message": "missed one of this arguments: \"local_node_host\", \"local_node_port\""}
+                    })
+            else:
+                abort(403)
+
+        @app.route("/api/store_routing_table")
+        def api_store_routing_table():
+            if request.remote_addr == api_access_host:
+                buckets = request.form.get("buckets", None)
+                local_node_id = request.form.get("local_node_id", None)
+                local_node_host = request.form.get("local_node_host", None)
+                local_node_port = request.form.get("local_node_port", None)
+
+                if buckets and local_node_id and local_node_host and local_node_port:
+                    db_store_routing_table(db, db_lock, buckets, local_node_id, local_node_host, local_node_port)
+                    return jsonify({"result": {"code": 200, "message": "OK"}})
+                else:
+                    return jsonify({"result": {
+                        "code": 500,
+                        "message": "missed one of this arguments: \"buckets\", \"local_node_id\", \"local_node_host\", \"local_node_port\""}
+                    })
+            else:
+                abort(403)
+
         # Regular http requests
         @app.route("/")
         def show_index():

@@ -162,3 +162,28 @@ def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
             )
         else:
             return []
+
+
+def db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_node_id=None):
+    with db_lock:
+        cond_list = [{"local_node_host": local_node_host},
+                     {"local_node_port": local_node_port}]
+
+        if local_node_id:
+            cond_list.append({"local_node_id": local_node_id})
+
+        return db.crawler_route.find_one({"$and": cond_list})
+
+
+def db_store_routing_table(db, db_lock, buckets, node_id, node_host, node_port):
+    with db_lock:
+        if db.crawler_route.count({"local_node_id": node_id}) > 0:
+            db.crawler_route.update({"local_node_id": node_id},
+                                    {"$set": {"buckets": buckets}})
+        else:
+            db.crawler_route.insert({
+                "buckets": buckets,
+                "local_node_id": node_id,
+                "local_node_host": node_host,
+                "local_node_port": node_port
+            })
