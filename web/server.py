@@ -43,11 +43,11 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         torrents = db.torrents
         torrents_indexes = torrents.index_information()
 
-        for index_info in [{"name": "fulltext_index", "keys": [("$**", TEXT)], "weights": {"name": 3, "path": 2},
+        for index_info in ({"name": "fulltext_index", "keys": [("$**", TEXT)], "weights": {"name": 3, "path": 2},
                             "default_language": "english"},
                            {"name": "info_hash", "keys": [("info_hash", ASCENDING)], "unique": True},
                            {"name": "access_count", "keys": [("access_count", ASCENDING)]},
-                           {"name": "timestamp", "keys": [("timestamp", DESCENDING)]}]:
+                           {"name": "timestamp", "keys": [("timestamp", DESCENDING)]}):
             if index_info["name"] not in torrents_indexes:
                 torrents.create_index(**index_info)
 
