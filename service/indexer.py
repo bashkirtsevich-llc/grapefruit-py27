@@ -49,7 +49,7 @@ def __get_hash_iterator(api_url):
 def __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash):
     try_load_metadata(
         info_hash=get_next_info_hash(),
-        schedule=60,  # Wait 60 seconds
+        schedule=1,  # Wait 1 second
         on_torrent_loaded=lambda metadata: __store_metadata(api_url, metadata, try_load_metadata, get_next_info_hash),
         on_torrent_not_found=lambda: __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash)
     )
@@ -58,7 +58,7 @@ def __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash):
 def __index_torrents(api_url, try_load_metadata):
     iterator = __get_hash_iterator(api_url)
 
-    for _ in xrange(10):
+    for _ in xrange(50):
         __index_next_info_hash(api_url, try_load_metadata, iterator)
 
 
