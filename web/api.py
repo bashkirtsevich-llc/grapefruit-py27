@@ -121,7 +121,7 @@ def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
             db.torrents.insert_one(document)
 
 
-def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
+def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3, inc_access_count=False):
     with db_lock:
         # Find candidates to load
         cursor = db.torrents.find(
@@ -144,12 +144,13 @@ def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
                 cursor.skip(randrange(max(cursor.count() - limit, 1))).limit(limit)
             )
 
-            # Increase access_count value
-            for info_hash in result:
-                db.torrents.update(
-                    {"info_hash": info_hash},
-                    {"$inc": {"access_count": 1}}
-                )
+            if inc_access_count:
+                # Increase access_count value
+                for info_hash in result:
+                    db.torrents.update(
+                        {"info_hash": info_hash},
+                        {"$inc": {"access_count": 1}}
+                    )
 
             return result
         else:
