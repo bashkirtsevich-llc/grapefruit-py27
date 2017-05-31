@@ -1,4 +1,5 @@
 import requests
+import json
 from torrent import load_torrent
 
 
@@ -6,11 +7,11 @@ def __store_metadata(api_url, metadata, *args, **kwargs):
     try:
         url = "{0}/add_torrent".format(api_url)
         data = {"info_hash": metadata["info_hash"],
-                "metadata": {
-                    "name": metadata["name"],
-                    "files": map(lambda f: {"path": f["path"],
-                                            "length": f["length"]},
-                                 metadata["files"])}
+                "metadata": json.dumps(
+                    {"name": metadata["name"],
+                     "files": map(lambda f: {"path": f["path"],
+                                             "length": f["length"]},
+                                  metadata["files"])})
                 }
         requests.post(url, data=data)
     finally:
