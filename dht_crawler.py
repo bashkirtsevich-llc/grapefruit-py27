@@ -1,12 +1,12 @@
 from multiprocessing import Process
 
-from dht_crawler_config import MONGODB_URI, DHT_CRAWLER_NODES_INFO
+from dht_crawler_config import *
 from service.crawler import start_crawler
 
 
-def start_crawlers(mongodb_uri, nodes_info):
+def start_crawlers(web_server_api_url, nodes_info):
     """
-    :param mongodb_uri: Mongodb connection uri
+    :param web_server_api_url: web server api url
     :param nodes_info: List of node info dicts ({"port": 123, "node_id": "456..."})
     :return: None
     """
@@ -14,7 +14,7 @@ def start_crawlers(mongodb_uri, nodes_info):
 
     for node_info in nodes_info:
         args = {
-            "mongodb_uri": mongodb_uri,
+            "web_server_api_url": web_server_api_url,
             "port": node_info["port"],
             "node_id": node_info["node_id"]
         }
@@ -29,5 +29,5 @@ def start_crawlers(mongodb_uri, nodes_info):
 
 
 if __name__ == '__main__':
-    start_crawlers(mongodb_uri=MONGODB_URI,
+    start_crawlers(web_server_api_url=WEB_SERVER_API_URL,
                    nodes_info=DHT_CRAWLER_NODES_INFO)
