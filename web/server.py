@@ -165,9 +165,12 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 max_access_count = request.form.get("max_access_count", 3)
                 inc_access_count = request.form.get("inc_access_count", False)
 
-                return jsonify(
-                    {"result": db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count, inc_access_count)}
-                )
+                result = db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count)
+
+                if inc_access_count:
+                    db_increase_access_count(db, db_lock, result)
+
+                return jsonify({"result": result})
             else:
                 abort(403)
 
