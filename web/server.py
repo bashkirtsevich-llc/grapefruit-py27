@@ -1,6 +1,7 @@
 from __future__ import division
 import urllib
 import math
+import json
 
 from threading import Lock
 
@@ -132,14 +133,14 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/add_torrent", methods=['POST'])
         def api_add_torrent():
             if request.remote_addr == api_access_host:
-                info_hash = request.form.get("info_hash", None)
-                metadata = request.form.get("metadata", None)
+                info_hash = request.form.get("info_hash", default=None, type=str)
+                metadata = json.loads(request.form.get("metadata", default="{}", type=str), encoding="utf-8")
 
                 if info_hash:
                     timestamp = datetime.utcnow()
 
                     try:
-                        if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
+                        if db_torrent_exists(db, db_lock, info_hash, bool(metadata)):
                             return jsonify({"result": {"code": 409, "message": "already exists"}})
                         elif metadata:
                             if metadata.get("info_hash", info_hash) == info_hash:
