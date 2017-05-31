@@ -165,9 +165,9 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/fetch_torrents_for_load")
         def api_fetch_torrents_for_load():
             if request.remote_addr == api_access_host:
-                limit = request.form.get("limit", 10)
-                max_access_count = request.form.get("max_access_count", 3)
-                inc_access_count = request.form.get("inc_access_count", False)
+                limit = request.args.get("limit", default=10, type=int)
+                max_access_count = request.args.get("max_access_count", default=3, type=int)
+                inc_access_count = request.args.get("inc_access_count", default=False, type=bool)
 
                 result = db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count)
 
