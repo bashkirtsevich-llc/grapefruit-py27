@@ -1,7 +1,3 @@
-// Add database script for migration from v1.3 to newest
-
-
-
 use grapefruit
 
 // rename collection
