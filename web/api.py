@@ -97,15 +97,20 @@ def db_get_torrents_count(db, db_lock):
 
 def db_torrent_exists(db, db_lock, info_hash, has_metadata=False):
     with db_lock:
-        cond = [{"info_hash": info_hash}]
+        return __db_torrent_exists(db, info_hash, has_metadata)
 
-        if has_metadata:
-            cond.extend([{"name": {"$exists": True}},
-                         {"files": {"$exists": True}}])
 
-        return db.torrents.count(
-            filter={"$and": cond}
-        ) > 0
+# Private function without entering critical section
+def __db_torrent_exists(db, info_hash, has_metadata=False):
+    cond = [{"info_hash": info_hash}]
+
+    if has_metadata:
+        cond.extend([{"name": {"$exists": True}},
+                     {"files": {"$exists": True}}])
+
+    return db.torrents.count(
+        filter={"$and": cond}
+    ) > 0
 
 
 def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
@@ -115,7 +120,7 @@ def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
         if metadata:
             document.update(metadata)
 
-        if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
+        if __db_torrent_exists(db, info_hash):
             db.torrents.update({"info_hash": info_hash}, {"$set": metadata})
         else:
             db.torrents.insert_one(document)
