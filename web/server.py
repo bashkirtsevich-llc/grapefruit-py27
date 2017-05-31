@@ -139,20 +139,27 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 metadata = request.form.get("metadata", None)
 
                 if info_hash:
-                    if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
-                        return jsonify({"result": {"code": 409, "message": "already exists"}})
-                    elif metadata:
-                        if metadata.get("info_hash", info_hash) == info_hash:
-                            md = {"timestamp": datetime.utcnow()}
-                            md.update(metadata)
+                    timestamp = datetime.utcnow()
 
-                            db_insert_or_update_torrent(db, db_lock, info_hash, md)
-                            return jsonify({"result": {"code": 200, "message": "OK"}})
+                    try:
+                        if db_torrent_exists(db, db_lock, info_hash, metadata is not None):
+                            return jsonify({"result": {"code": 409, "message": "already exists"}})
+                        elif metadata:
+                            if metadata.get("info_hash", info_hash) == info_hash:
+                                md = {"timestamp": timestamp}
+                                md.update(metadata)
+
+                                db_insert_or_update_torrent(db, db_lock, info_hash, md)
+                                return jsonify({"result": {"code": 200, "message": "OK"}})
+                            else:
+                                return jsonify({"result": {
+                                    "code": 500, "message": "invalid extra field \"info_hash\" in \"metadata\""
+                                }})
                         else:
-                            return jsonify({"result": {"code": 500,
-                                                       "message": "invalid extra field \"info_hash\" in metadata"}})
-                    else:
-                        db_insert_or_update_torrent(db, db_lock, info_hash)
+                            db_insert_or_update_torrent(db, db_lock, info_hash)
+                    finally:
+                        # Write info_hash into log ("db.hashes") collection
+                        db_log_info_hash(db, db_lock, info_hash, timestamp)
                 else:
                     return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
             else:

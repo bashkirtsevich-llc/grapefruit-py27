@@ -121,6 +121,14 @@ def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
             db.torrents.insert_one(document)
 
 
+def db_log_info_hash(db, db_lock, info_hash, timestamp):
+    with db_lock:
+        db.hashes.insert({
+            "info_hash": info_hash,
+            "timestamp": timestamp
+        })
+
+
 def db_increase_access_count(db, db_lock, info_hashes):
     with db_lock:
         for info_hash in info_hashes:
