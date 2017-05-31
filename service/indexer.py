@@ -23,7 +23,7 @@ def __get_hash_iterator(api_url):
     def load_torrents():
         url = "{0}/fetch_torrents_for_load".format(api_url)
 
-        api_response = requests.get(url, params={"limit": 50, "inc_access_count": False}).json()
+        api_response = requests.get(url, params={"limit": 50, "inc_access_count": True}).json()
 
         results = api_response["result"]
         if results and isinstance(results, list):
