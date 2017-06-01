@@ -6,4 +6,4 @@ DHT_DEFAULT_BOOTSTRAP_ADDRESS = ("router.bittorrent.com", 6881)
 DHT_INDEXERS_INFO = map(lambda port: {"port": port,
                                       "node_id": None,
                                       "bootstrap": DHT_DEFAULT_BOOTSTRAP_ADDRESS},
-                        xrange(6881, 6901, 2))
+                        xrange(6881, 6882))
