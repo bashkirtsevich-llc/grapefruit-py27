@@ -171,7 +171,13 @@ def db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_n
         if local_node_id:
             cond_list.append({"local_node_id": local_node_id})
 
-        return db.crawler_route.find_one({"$and": cond_list})
+        return db.crawler_route.find_one(
+            filter={"$and": cond_list},
+            projection={"_id": False,
+                        "local_node_host": True,
+                        "buckets": True,
+                        "local_node_id": True,
+                        "local_node_port": True})
 
 
 def db_store_routing_table(db, db_lock, buckets, node_id, node_host, node_port):
