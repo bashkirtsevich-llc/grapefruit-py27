@@ -182,9 +182,9 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/load_routing_table")
         def api_load_routing_table():
             if request.remote_addr == api_access_host:
-                local_node_host = request.form.get("local_node_host", None)
-                local_node_port = request.form.get("local_node_port", None)
-                local_node_id = request.form.get("local_node_id", None)
+                local_node_host = request.args.get("local_node_host", default=None, type=str)
+                local_node_port = request.args.get("local_node_port", default=0, type=int)
+                local_node_id = request.args.get("local_node_id", default=None, type=str)
 
                 if local_node_host and local_node_port:
                     result = db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_node_id)
