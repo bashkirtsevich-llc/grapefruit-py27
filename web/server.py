@@ -204,7 +204,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/api/store_routing_table")
         def api_store_routing_table():
             if request.remote_addr == api_access_host:
-                buckets = request.form.get("buckets", None)
+                buckets = json.loads(request.form.get("buckets", default="{}", type=str))
                 local_node_id = request.form.get("local_node_id", default=None, type=str)
                 local_node_host = request.form.get("local_node_host", default=None, type=str)
                 local_node_port = request.form.get("local_node_port", default=None, type=int)

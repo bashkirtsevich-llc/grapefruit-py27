@@ -1,5 +1,6 @@
 from binascii import hexlify, unhexlify
 import requests
+import json
 from dht.common_utils import generate_node_id
 from dht.crawler.krpc import DHTProtocol
 
@@ -59,7 +60,7 @@ def __store_routing_table(web_server_api_url, local_node_id, address, buckets):
 
         requests.post(
             "{0}/store_routing_table".format(web_server_api_url),
-            data={"buckets": buckets_hex,
+            data={"buckets": json.dumps(buckets_hex),
                   "local_node_id": node_id_hex,
                   "local_node_host": address[0],
                   "local_node_port": address[1]}
