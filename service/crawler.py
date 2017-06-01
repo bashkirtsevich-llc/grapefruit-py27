@@ -10,7 +10,7 @@ def __try_load_routing_table(web_server_api_url, local_node_host, local_node_por
         params={"local_node_host": local_node_host,
                 "local_node_port": local_node_port,
                 "local_node_id": local_node_id}
-    )
+    ).json()
 
     # if "code" in response["result"]:
     result = response.get("result", None)
