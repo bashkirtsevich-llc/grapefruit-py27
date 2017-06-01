@@ -4,7 +4,7 @@ from random import randrange
 from pymongo import DESCENDING
 
 
-def db_search_torrents(db, db_lock, query, fields, offset=0, limit=0):
+def db_search_torrents(db, query, fields, offset=0, limit=0):
     assert isinstance(fields, list)
 
     projection = {"score": {"$meta": "textScore"}, "_id": False}
@@ -15,15 +15,14 @@ def db_search_torrents(db, db_lock, query, fields, offset=0, limit=0):
     start_time = time()
 
     # Query database
-    with db_lock:
-        cursor = db.torrents.find(
-            filter={"$and": [
-                {"$text": {"$search": query}},
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection=projection,
-            sort=[("score", {"$meta": "textScore"})]
-        )
+    cursor = db.torrents.find(
+        filter={"$and": [
+            {"$text": {"$search": query}},
+            {"name": {"$exists": True}},
+            {"files": {"$exists": True}}]},
+        projection=projection,
+        sort=[("score", {"$meta": "textScore"})]
+    )
 
     if cursor:
         results_count, results = cursor.count(), list(cursor.skip(offset).limit(limit))
@@ -35,28 +34,27 @@ def db_search_torrents(db, db_lock, query, fields, offset=0, limit=0):
     return results_count, results, elapsed_time
 
 
-def db_get_torrent_details(db, db_lock, info_hash):
+def db_get_torrent_details(db, info_hash):
     start_time = time()
 
     # Query database
-    with db_lock:
-        result = db.torrents.find_one(
-            filter={"$and": [
-                {"info_hash": info_hash},
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection={"_id": False,
-                        "name": True,
-                        "files": True,
-                        "info_hash": True}
-        )
+    result = db.torrents.find_one(
+        filter={"$and": [
+            {"info_hash": info_hash},
+            {"name": {"$exists": True}},
+            {"files": {"$exists": True}}]},
+        projection={"_id": False,
+                    "name": True,
+                    "files": True,
+                    "info_hash": True}
+    )
 
     elapsed_time = time() - start_time
 
     return result, elapsed_time
 
 
-def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
+def db_get_last_torrents(db, fields, offset=0, limit=100):
     assert isinstance(fields, list)
 
     projection = {"_id": False}
@@ -67,14 +65,13 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
     start_time = time()
 
     # Query database
-    with db_lock:
-        cursor = db.torrents.find(
-            filter={"$and": [
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]},
-            projection=projection,
-            sort=[("timestamp", DESCENDING)]
-        )
+    cursor = db.torrents.find(
+        filter={"$and": [
+            {"name": {"$exists": True}},
+            {"files": {"$exists": True}}]},
+        projection=projection,
+        sort=[("timestamp", DESCENDING)]
+    )
 
     if cursor:
         results_count, results = min(cursor.count(), 100), list(cursor.skip(offset).limit(limit))
@@ -86,22 +83,15 @@ def db_get_last_torrents(db, db_lock, fields, offset=0, limit=100):
     return results_count, results, elapsed_time
 
 
-def db_get_torrents_count(db, db_lock):
-    with db_lock:
-        return db.torrents.count(
-            filter={"$and": [
-                {"name": {"$exists": True}},
-                {"files": {"$exists": True}}]}
-        )
+def db_get_torrents_count(db):
+    return db.torrents.count(
+        filter={"$and": [
+            {"name": {"$exists": True}},
+            {"files": {"$exists": True}}]}
+    )
 
 
-def db_torrent_exists(db, db_lock, info_hash, has_metadata=False):
-    with db_lock:
-        return __db_torrent_exists(db, info_hash, has_metadata)
-
-
-# Private function without entering critical section
-def __db_torrent_exists(db, info_hash, has_metadata=False):
+def db_torrent_exists(db, info_hash, has_metadata=False):
     cond = [{"info_hash": info_hash}]
 
     if has_metadata:
@@ -115,23 +105,27 @@ def __db_torrent_exists(db, info_hash, has_metadata=False):
 
 def db_insert_or_update_torrent(db, db_lock, info_hash, metadata=None):
     with db_lock:
-        document = {"info_hash": info_hash}
-
-        if metadata:
-            document.update(metadata)
-
-        if __db_torrent_exists(db, info_hash):
-            db.torrents.update({"info_hash": info_hash}, {"$set": metadata})
+        if metadata and db_torrent_exists(db, info_hash, True):
+            return False
         else:
-            db.torrents.insert_one(document)
+            document = {"info_hash": info_hash}
+
+            if metadata:
+                document.update(metadata)
+
+            if db_torrent_exists(db, info_hash):
+                db.torrents.update({"info_hash": info_hash}, {"$set": metadata})
+            else:
+                db.torrents.insert_one(document)
+
+            return True
 
 
-def db_log_info_hash(db, db_lock, info_hash, timestamp):
-    with db_lock:
-        db.hashes.insert({
-            "info_hash": info_hash,
-            "timestamp": timestamp
-        })
+def db_log_info_hash(db, info_hash, timestamp):
+    db.hashes.insert({
+        "info_hash": info_hash,
+        "timestamp": timestamp
+    })
 
 
 def db_increase_access_count(db, db_lock, info_hashes):
