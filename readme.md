@@ -1,4 +1,4 @@
-# Grapefruit torrents search engine
+# :tangerine: Grapefruit torrents search engine
 ## Overview
 Bittorrent [DHT-network](https://en.wikipedia.org/wiki/Distributed_hash_table) crawler based on [kademlia](https://en.wikipedia.org/wiki/Kademlia) protocol. 
 
