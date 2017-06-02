@@ -23,6 +23,10 @@ Requirement packets for successfully install ```twisted```:
 ```
 sudo apt-get install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
 ```
+Or `python-dev` only:
+```
+sudo apt-get install python-dev
+```
 Thats all, I hope.
 
 ## Running
@@ -45,15 +49,21 @@ In ```config.py``` file you can configure some server options, such as:
    "files":[  
       {  
          "path":[  
-            "folder",
-            "filename.ext"
+            "folder1",
+            "file1"
          ],
-         "length":123
+         "length":10
       },
-
+      {  
+         "path":[  
+            "folder2",
+            "file2"
+         ],
+         "length":20
+      }
    ],
-   "name":"torrent name",
-   "info_hash":"0123456789abcdefabcd0123456789abcdefabcd"
+   "name":"sample torrent",
+   "info_hash":"7752b63e7b62f3f13d4a070a0522196e7142fbe6"
 }
 ```
 * Full text wildcard index:
@@ -64,7 +74,7 @@ In ```config.py``` file you can configure some server options, such as:
       "_fts":"text",
       "_ftsx":1
    },
-   "name":"$**_text",
+   "name":"fulltext_index",
    "ns":"grapefruit.torrents",
    "weights":{  
       "$**":1,
@@ -82,21 +92,21 @@ In ```config.py``` file you can configure some server options, such as:
 {  
    "routing_table":[  
       [  
-         "0123456789abcdefabcd0123456789abcdefabcd",
+         "0bfea6427313a84144d2eca74e57689155c379f4",
          [  
             "1.2.3.4",
             5678
          ]
       ],
       [  
-         "123456789abcdefabcd0123456789abcdefabcde",
+         "39e0da6b7609a3f225e86aa55175dd85d193e121",
          [  
             "9.10.11.12",
             1314
          ]
       ]
    ],
-   "node_id":"23456789abcdefabcd0123456789abcdefabcdef"
+   "node_id":"20b15ed501c738dab5d96abe0f22a44e1de75b9a"
 }
 ```
 This collection contains routing tables for spyder crawler. Using for quick bootstrap after startup.
@@ -104,11 +114,56 @@ This collection contains routing tables for spyder crawler. Using for quick boot
 * Structure
 ```json
 {  
-   "timestamp":ISODate("2017-04-09..."),
-   "info_hash":"0123456789abcdefabcd0123456789abcdefabcd"
+   "timestamp" : ISODate("2017-04-28T16:11:52.405Z"),
+   "info_hash" : "20b15ed501c738dab5d96abe0f22a44e1de75b9a"
 }
 ```
 This collection can be usefull for analytics.
+## Database migration
+For migrate from older database to newest, you can execute `tools/migrate_from_1.3.js` script is mongo shell.
+### Manual migration.
+Switch to database:
+```javascript
+use grapefruit
+```
+Rename `torrents` collection:
+```javascript
+db.torrents.renameCollection("torrents_old")
+```
+Unset `attempt` field:
+```javascript
+db.torrents_old.find({"attempt": {$exists: true}}).forEach(function(doc) {
+    db.torrents_old.update({"info_hash": doc.info_hash}, {$unset: {"attempt": ""}})
+})
+```
+Recreate `torrents` collection, insert torrents with metadata only:
+```javascript
+db.torrents_old.find({$and: [{"name": {$exists: true}}, {"files": {$exists: true}}]}).forEach(function(doc) {
+    cursor = db.hashes.aggregate([
+        {$match: {"info_hash": doc.info_hash}},
+        {$group: {_id: "$info_hash", timestamp: {$min: "$timestamp"}}}
+    ]).toArray()
+        
+    if (cursor.length > 0)
+        timestamp = cursor[0].timestamp
+    else
+        timestamp = ISODate("2017-01-01 00:00:00")
+
+    db.torrents.insert({"info_hash": doc.info_hash, "name": doc.name, "files": doc.files, "timestamp": timestamp})
+})
+```
+Drop `torrents_old` collection:
+```javascript
+db.torrents_old.drop()
+```
+Add lost torrents from `hashes` collection:
+```javascript
+db.hashes.distinct("info_hash").forEach(function(info_hash) {
+    if (db.torrents.count({"info_hash": info_hash}) == 0)
+        db.torrents.insert({"info_hash": info_hash})
+})
+
+```
 ## Internals
 ### “service” folder
 #### Metadata loading
