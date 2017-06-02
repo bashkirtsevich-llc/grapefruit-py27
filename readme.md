@@ -32,13 +32,31 @@ Thats all, I hope.
 ## Running
 Grapefruit crawler can be run by executing ```start_grapefruit.sh```. Script will start MongoDB service and exec http server for comfortable navigation in torrents database. After starting you can open URL [http://localhost:8081/](http://localhost:8081/) and work with database.
 
-Other files, such as ```start_dhtserver.sh``` and ```start_webserver.sh``` can be used for starting each service separatley.
+Other files, such as `start_dhtserver.sh` and `start_webserver.sh` can be used for starting each service separatley.
 ### Configure services
-In ```config.py``` file you can configure some server options, such as:
+In `web_server_config.py` file you can configure some server options, such as:
 * MongoDB connection URL
 * web server ip address (```0.0.0.0``` allows to access to server from network, ```127.0.0.1``` — access only from localhost) and port (default ```8081```, you can use other)
-* dht-crawler port — is a outer DHT-crawler UDP port, whitch will be listen for incoming queries
-* dht-server port — outer UDP port, whitch will be used for handling metadata loading
+* `dht_crawler_config.py`:
+```python
+WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
+
+DHT_CRAWLER_NODES_INFO = map(lambda port: {"port": port, "node_id": None},
+                             xrange(6981, 6991))
+```
+`xrange(6981, 6991)` — is a outer DHT-crawler UDP port, whitch will be listen for incoming queries
+* `dht_indexer_config.py`:
+```python
+WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
+
+DHT_DEFAULT_BOOTSTRAP_ADDRESS = ("router.bittorrent.com", 6881)
+
+DHT_INDEXERS_INFO = map(lambda port: {"port": port,
+                                      "node_id": None,
+                                      "bootstrap": DHT_DEFAULT_BOOTSTRAP_ADDRESS},
+                        xrange(6881, 6882))
+```
+`xrange(6881, 6882)` — outer UDP port, whitch will be used for handling metadata loading
 
 **Warning**, ```dht-crawler port``` should be differ from ```dht-server port```.
 ## MongoDB structure
