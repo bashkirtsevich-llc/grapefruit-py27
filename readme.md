@@ -44,7 +44,7 @@ WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
 DHT_CRAWLER_NODES_INFO = map(lambda port: {"port": port, "node_id": None},
                              xrange(6981, 6991))
 ```
-`xrange(6981, 6991)` — is a outer DHT-crawler UDP port, whitch will be listen for incoming queries
+`xrange(6981, 6991)` — is a outer DHT-crawler UDP ports range, whitch will be listen for incoming queries
 * `dht_indexer_config.py`:
 ```python
 WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
@@ -56,7 +56,7 @@ DHT_INDEXERS_INFO = map(lambda port: {"port": port,
                                       "bootstrap": DHT_DEFAULT_BOOTSTRAP_ADDRESS},
                         xrange(6881, 6882))
 ```
-`xrange(6881, 6882)` — outer UDP port, whitch will be used for handling metadata loading
+`xrange(6881, 6882)` — outer UDP ports range, whitch will be used for handling metadata loading
 
 **Warning**, ```dht-crawler port``` should be differ from ```dht-server port```.
 ## MongoDB structure
@@ -138,7 +138,7 @@ This collection contains routing tables for spyder crawler. Using for quick boot
 ```
 This collection can be usefull for analytics.
 ## Database migration
-For migrate from older database to newest, you can execute `tools/migrate_from_1.3.js` script is mongo shell.
+For migrate from older database to newest, you can execute `tools/migrate_from_1.3.js` script in mongo shell.
 ### Manual migration.
 Switch to database:
 ```javascript
