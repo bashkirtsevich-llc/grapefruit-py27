@@ -202,7 +202,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             else:
                 abort(403)
 
-        @app.route("/api/store_routing_table")
+        @app.route("/api/store_routing_table", methods=['POST'])
         def api_store_routing_table():
             if request.remote_addr == api_access_host:
                 buckets = json.loads(request.form.get("buckets", default="{}", type=str))
