@@ -1,4 +1,3 @@
-# Database address
 WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
 
 DHT_DEFAULT_BOOTSTRAP_ADDRESS = ("router.bittorrent.com", 6881)
