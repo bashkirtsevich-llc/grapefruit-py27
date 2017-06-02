@@ -25,23 +25,23 @@ from datetime import datetime
 def start_server(mongodb_uri, host, port, api_access_host=None):
     mongo_client = MongoClient(mongodb_uri)
     try:
-        db = mongo_client.grapefruit
-
-        db_lock = Lock()
+        db_for_api = mongo_client.grapefruit
+        db_for_ui = mongo_client.grapefruit
+        db_lock_for_api = Lock()
 
         for coll_name in ["crawler_route", "hashes", "torrents"]:
-            if coll_name not in db.collection_names():
-                db.create_collection(coll_name)
+            if coll_name not in db_for_api.collection_names():
+                db_for_api.create_collection(coll_name)
 
         # Index by local node info for crawler_route
-        if "host_port_id" not in db.crawler_route.index_information():
-            db.crawler_route.create_index(keys=[("local_node_host", ASCENDING),
-                                                ("local_node_port", ASCENDING),
-                                                ("local_node_id", ASCENDING)],
-                                          name="host_port_id",
-                                          unique=True)
+        if "host_port_id" not in db_for_api.crawler_route.index_information():
+            db_for_api.crawler_route.create_index(keys=[("local_node_host", ASCENDING),
+                                                        ("local_node_port", ASCENDING),
+                                                        ("local_node_id", ASCENDING)],
+                                                  name="host_port_id",
+                                                  unique=True)
 
-        torrents = db.torrents
+        torrents = db_for_api.torrents
         torrents_indexes = torrents.index_information()
 
         for index_info in ({"name": "fulltext_index", "keys": [("$**", TEXT)], "weights": {"name": 3, "path": 2},
@@ -87,7 +87,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
 
                 if query:
                     results_count, results, elapsed_time = db_search_torrents(
-                        db,
+                        db_for_api,
                         query=query,
                         fields=["name", "info_hash"],
                         offset=offset,
@@ -106,12 +106,12 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 limit = min(abs(int(request.args.get("limit", default=100))), 100)
 
                 results_count, results, elapsed_time = db_get_last_torrents(
-                    db,
+                    db_for_api,
                     fields=["name", "info_hash"],
                     offset=offset,
                     limit=limit
                 )
-                total_count = db_get_torrents_count(db)
+                total_count = db_get_torrents_count(db_for_api)
 
                 return jsonify({"result": results, "count": results_count, "total_count": total_count,
                                 "elapsed_time": elapsed_time})
@@ -123,7 +123,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             if request.remote_addr == api_access_host:
                 info_hash = request.args.get("info_hash", None)
                 if info_hash:
-                    result, elapsed_time = db_get_torrent_details(db, info_hash)
+                    result, elapsed_time = db_get_torrent_details(db_for_api, info_hash)
                     return jsonify({"result": result, "elapsed_time": elapsed_time})
                 else:
                     return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
@@ -149,14 +149,14 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                                     "code": 500, "message": "invalid extra field \"info_hash\" in \"metadata\""
                                 }})
 
-                        if db_insert_or_update_torrent(db, db_lock, info_hash, md):
+                        if db_insert_or_update_torrent(db_for_api, db_lock_for_api, info_hash, md):
                             return jsonify({"result": {"code": 202, "message": "accepted"}})
                         else:
                             return jsonify({"result": {"code": 409, "message": "already exists"}})
                     finally:
                         # Metadata not presented, when function called from crawler
                         if not metadata:
-                            db_log_info_hash(db, info_hash, timestamp)
+                            db_log_info_hash(db_for_api, info_hash, timestamp)
                 else:
                     return jsonify({"result": {"code": 500, "message": "missed \"info_hash\" argument"}})
             else:
@@ -170,10 +170,10 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 inc_access_count = request.args.get(
                     "inc_access_count", default="false", type=str).lower() == "true"
 
-                result = db_fetch_not_indexed_torrents(db, db_lock, limit, max_access_count)
+                result = db_fetch_not_indexed_torrents(db_for_api, db_lock_for_api, limit, max_access_count)
 
                 if inc_access_count:
-                    db_increase_access_count(db, db_lock, result)
+                    db_increase_access_count(db_for_api, db_lock_for_api, result)
 
                 return jsonify({"result": result})
             else:
@@ -187,7 +187,8 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 local_node_id = request.args.get("local_node_id", default=None, type=str)
 
                 if local_node_host and local_node_port:
-                    result = db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_node_id)
+                    result = db_load_routing_table(db_for_api, db_lock_for_api, local_node_host, local_node_port,
+                                                   local_node_id)
 
                     if result:
                         return jsonify({"result": result})
@@ -210,7 +211,8 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
                 local_node_port = request.form.get("local_node_port", default=None, type=int)
 
                 if buckets and local_node_id and local_node_host and local_node_port:
-                    db_store_routing_table(db, db_lock, buckets, local_node_id, local_node_host, local_node_port)
+                    db_store_routing_table(db_for_api, db_lock_for_api, buckets, local_node_id, local_node_host,
+                                           local_node_port)
                     return jsonify({"result": {"code": 200, "message": "OK"}})
                 else:
                     return jsonify({"result": {
@@ -224,7 +226,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
         @app.route("/")
         def show_index():
             return render_template("index.html",
-                                   torrents_count=db_get_torrents_count(db))
+                                   torrents_count=db_get_torrents_count(db_for_ui))
 
         def render_results(source_url, query, page, results, results_count, elapsed_time):
             items = list(results)
@@ -254,7 +256,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
 
             if query:
                 results_count, results, elapsed_time = db_search_torrents(
-                    db,
+                    db_for_ui,
                     query=query,
                     fields=["name", "files", "info_hash"],
                     limit=results_per_page,
@@ -269,7 +271,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             page = max(int(request.args.get("p", default=1)), 1)
 
             results_count, results, elapsed_time = db_get_last_torrents(
-                db,
+                db_for_ui,
                 fields=["name", "files", "info_hash"],
                 limit=results_per_page,
                 offset=(page - 1) * results_per_page
@@ -283,7 +285,7 @@ def start_server(mongodb_uri, host, port, api_access_host=None):
             info_hash = request.args.get("t")
 
             if info_hash:
-                result, _ = db_get_torrent_details(db, info_hash)
+                result, _ = db_get_torrent_details(db_for_ui, info_hash)
 
                 if result:
                     arguments = {
