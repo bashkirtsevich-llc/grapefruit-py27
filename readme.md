@@ -3,23 +3,22 @@
 Bittorrent [DHT-network](https://en.wikipedia.org/wiki/Distributed_hash_table) crawler based on [kademlia](https://en.wikipedia.org/wiki/Kademlia) protocol. 
 
 After bootstraping, service collect and ping all nodes in response queries thereby extend routing table.
-When some outer node send request with torrent ```info_hash```(eg ```get_peers``` or ```announce```), service will store info in mongodb ```hashes``` collection.
+When some outer node send request with torrent `info_hash`(eg `get_peers` or `announce`), service will store info in mongodb `hashes` collection.
 
-When ```info_hash``` is received, service trying to find peers in bittorrent network and request torrent metadata such as torrent ```name```, torrent ```files``` and store into ```torrents``` collection.
+When `info_hash` is received, service trying to find peers in bittorrent network and request torrent metadata such as torrent `name`, torrent `files` and store into `torrents` collection.
 ## Requirements
-Grapefruit required python libraries such as [```twisted matrix```](https://twistedmatrix.com/trac/) and ```pymongo```. Web-server required [```flask microframework```](http://flask.pocoo.org/).
+Grapefruit required python libraries such as [`twisted matrix`](https://twistedmatrix.com/trac/) and `pymongo`. Web-server required [`flask microframework`](http://flask.pocoo.org/).
 
-You can use ```pip``` for install requirements (```pip install -r requirements.txt```).
-Actual requirements (from ```requirements.txt```):
+You can use `pip` for install requirements (`pip install -r requirements.txt`).
+Actual requirements (from `requirements.txt`):
 ```
-flask==0.11.1
-pymongo==3.3.1
-twisted==16.6.0
-rpcudp==2.1
+Flask==0.11.1
+Twisted==16.6.0
 bencode==1.0
-zope.interface==4.3.3
+rpcudp==2.1
+pymongo==3.3.1
 ```
-Requirement packets for successfully install ```twisted```:
+Requirement packets for successfully install `twisted`:
 ```
 sudo apt-get install build-essential autoconf libtool pkg-config python-opengl python-imaging python-pyrex python-pyside.qtopengl idle-python2.7 qt4-dev-tools qt4-designer libqtgui4 libqtcore4 libqt4-xml libqt4-test libqt4-script libqt4-network libqt4-dbus python-qt4 python-qt4-gl libgle3 python-dev
 ```
@@ -27,16 +26,20 @@ Or minimal installation:
 ```
 sudo apt-get install build-essential autoconf python-dev
 ```
+On raspberrypi:
+```
+sudo apt-get install python-dev
+```
 Thats all, I hope.
 
 ## Running
-Grapefruit crawler can be run by executing ```start_grapefruit.sh```. Script will start MongoDB service and exec http server for comfortable navigation in torrents database. After starting you can open URL [http://localhost:8081/](http://localhost:8081/) and work with database.
+Grapefruit crawler can be run by executing `start_grapefruit.sh`. Script will start MongoDB service and exec http server for comfortable navigation in torrents database. After starting you can open URL [http://localhost:8081/](http://localhost:8081/) and work with database.
 
 Other files, such as `start_dhtserver.sh` and `start_webserver.sh` can be used for starting each service separatley.
 ### Configure services
 In `web_server_config.py` file you can configure some server options, such as:
 * MongoDB connection URL
-* web server ip address (```0.0.0.0``` allows to access to server from network, ```127.0.0.1``` — access only from localhost) and port (default ```8081```, you can use other)
+* web server ip address (`0.0.0.0` allows to access to server from network, `127.0.0.1` — access only from localhost) and port (default `8081`, you can use other)
 * `dht_crawler_config.py`:
 ```python
 WEB_SERVER_API_URL = "http://127.0.0.1:8081/api"
@@ -58,7 +61,7 @@ DHT_INDEXERS_INFO = map(lambda port: {"port": port,
 ```
 `xrange(6881, 6882)` — outer UDP ports range, whitch will be used for handling metadata loading
 
-**Warning**, ```dht-crawler port``` should be differ from ```dht-server port```.
+**Warning**, `dht-crawler port` should be differ from `dht-server port`.
 ## MongoDB structure
 ### “torrents” collection
 * Structure:
@@ -185,8 +188,8 @@ db.hashes.distinct("info_hash").forEach(function(info_hash) {
 ## Internals
 ### “service” folder
 #### Metadata loading
-```service/metadata_loader.py``` — is a standalone bittorrent dht-server and simplified async torrent client, implements only extended handshake with “ut_metadata” extension. Based on [```twisted matrix```](https://twistedmatrix.com/trac/) python library.
-Here is example, how to use ```metadata_loader``` standalone.
+`service/metadata_loader.py` — is a standalone bittorrent dht-server and simplified async torrent client, implements only extended handshake with “ut_metadata” extension. Based on [`twisted matrix`](https://twistedmatrix.com/trac/) python library.
+Here is example, how to use `metadata_loader` standalone.
 ``` python
 from metadata_loader import metadata_loader
 from binascii import unhexlify
@@ -203,7 +206,7 @@ def on_bootstrap_done(search):
 metadata_loader("router.bittorrent.com", 6881, 12346,
                 on_bootstrap_done=on_bootstrap_done)
 ```
-```router.bittorrent.com:6881``` — is a bootstrap node for initialization local routing table.
+`router.bittorrent.com:6881` — is a bootstrap node for initialization local routing table.
 ##### Bootstrap nodes
 Known bittorrent bootstrap nodes:
 * router.bittorrent.com:6881
