@@ -1,7 +1,7 @@
 echo "start web server"
 python web_server.py &
-echo "wait 5 seconds"
-sleep 5
+echo "wait 30 seconds"
+sleep 30
 echo "start crawler"
 python dht_crawler.py &
 echo "start indexer"
