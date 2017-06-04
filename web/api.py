@@ -138,29 +138,40 @@ def db_increase_access_count(db, db_lock, info_hashes):
 
 
 def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
-    with db_lock:
+    def make_query(lt):
+        return {"$and": [
+            {"name": {"$exists": False}},
+            {"files": {"$exists": False}},
+            {"$or": [
+                {"access_count": {"$exists": False}},
+                {"access_count": {"$lt" if lt else "$gte": max_access_count}}
+            ]}
+        ]}
+
+    def select(query, fetch_limit):
         # Find candidates to load
         cursor = db.torrents.find(
-            filter={"$and": [
-                {"name": {"$exists": False}},
-                {"files": {"$exists": False}},
-                {"$or": [
-                    {"access_count": {"$exists": False}},
-                    {"access_count": {"$lt": max_access_count}}
-                ]}
-            ]},
+            filter=query,
             projection={"_id": False,
                         "info_hash": True}
         )
 
         if cursor:
-            # Return info_hashes only
             return map(
                 lambda item: item["info_hash"],
-                cursor.skip(randrange(max(cursor.count() - limit, 1))).limit(limit)
+                cursor.skip(randrange(max(cursor.count() - fetch_limit, 1))).limit(fetch_limit)
             )
         else:
             return []
+
+    with db_lock:
+        result = []
+
+        result.extend(select(make_query(True), limit))
+        if len(result) < limit:
+            result.extend(select(make_query(False), limit - len(result)))
+
+        return result
 
 
 def db_load_routing_table(db, db_lock, local_node_host, local_node_port, local_node_id=None):
