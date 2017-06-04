@@ -164,5 +164,5 @@ class RPCFindResponse(object):
         Get the node list in the response.  If there's no value, this should
         be set.
         """
-        nodelist = decode_nodes(self.response[1]["nodes"]) or []
+        nodelist = decode_nodes(self.response[1]["nodes"])
         return [Node(*nodeple) for nodeple in nodelist]
