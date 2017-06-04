@@ -120,7 +120,7 @@ class NodeSpiderCrawl(SpiderCrawl):
             response = RPCFindResponse(response)
             if not response.happened():
                 toremove.append(peerid)
-            else:
+            elif response.hasNodeList():
                 self.nearest.push(response.getNodeList())
         self.nearest.remove(toremove)
 
