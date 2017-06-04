@@ -106,7 +106,7 @@ class BitTorrentClient(protocol.Protocol, policies.TimeoutMixin):
                 return
         else:
             # Read regular message
-            while self._buffer:
+            while len(self._buffer) >= 4:
                 msg_len = unpack("!I", self._buffer[:4])[0]
 
                 if len(self._buffer) >= msg_len + 4:
