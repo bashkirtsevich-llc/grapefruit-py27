@@ -14,6 +14,9 @@ def __store_metadata(api_url, metadata, *args, **kwargs):
                                   metadata["files"])})
                 }
         requests.post(url, data=data)
+    except:  # Ignore any exceptions.
+        # TODO: Need to fix "error reading utf-8" error when invoke "json.dumps" function
+        pass
     finally:
         __index_next_info_hash(api_url, *args, **kwargs)
 
