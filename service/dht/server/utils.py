@@ -108,8 +108,16 @@ def decode_nodes(message):
 
 
 def decode_values(values):
-    return map(lambda value: (socket.inet_ntoa(value[:4]),
-                              struct.unpack("!H", value[4: 6])[0]), values)
+    result = []
+
+    for value in values:
+        try:
+            result.append((socket.inet_ntoa(value[:4]),
+                           struct.unpack("!H", value[4: 6])[0]))
+        except:
+            continue
+
+    return result
 
 
 def encode_values(values):
