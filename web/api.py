@@ -165,9 +165,7 @@ def db_fetch_not_indexed_torrents(db, db_lock, limit=10, max_access_count=3):
             return []
 
     with db_lock:
-        result = []
-
-        result.extend(select(make_query(True), limit))
+        result = select(make_query(True), limit)
         if len(result) < limit:
             result.extend(select(make_query(False), limit - len(result)))
 
