@@ -3,6 +3,7 @@ from twisted.internet import reactor
 from bittorrent.bittorrent import ConnectionChain
 from dht.server.network import Server
 from dht.common_utils import generate_node_id, generate_peer_id
+from threading import Lock
 
 
 def load_torrent(bootstrap_address, port, **kwargs):
@@ -39,26 +40,31 @@ def load_torrent(bootstrap_address, port, **kwargs):
         elif callable(on_torrent_not_found):
             on_torrent_not_found()
 
-    def get_peers(server, info_hash, on_torrent_loaded, on_torrent_not_found):
+    def get_peers(server, server_lock, info_hash, on_torrent_loaded, on_torrent_not_found):
         # Guard info_hash
         if info_hash and len(info_hash) == 20:
-            server.get_peers(info_hash).addCallback(connect_peers, info_hash,
-                                                    on_torrent_loaded, on_torrent_not_found)
+            with server_lock:
+                server.get_peers(info_hash).addCallback(connect_peers, info_hash,
+                                                        on_torrent_loaded, on_torrent_not_found)
 
         elif callable(on_torrent_not_found):
             on_torrent_not_found()
 
-    def bootstrap_done(found, server):
+    def bootstrap_done(found, server, server_lock, global_lock):
+
+        def try_load_metadata(info_hash, on_torrent_loaded,
+                              on_torrent_not_found=None, schedule=0):
+            with global_lock:
+                reactor.callLater(schedule, get_peers,
+                                  server, server_lock,
+                                  unhexlify(info_hash) if info_hash else None,
+                                  on_torrent_loaded, on_torrent_not_found)
+
         if found:
             on_bootstrap_done = kwargs.get("on_bootstrap_done", None)
 
             if callable(on_bootstrap_done):
-                on_bootstrap_done(lambda info_hash, on_torrent_loaded, on_torrent_not_found=None, schedule=0:
-                                  # Invoke "get_peers" after "schedule" seconds
-                                  reactor.callLater(schedule, get_peers,
-                                                    server,
-                                                    unhexlify(info_hash) if info_hash else None,
-                                                    on_torrent_loaded, on_torrent_not_found))
+                on_bootstrap_done(try_load_metadata)
         else:
             on_bootstrap_failed = kwargs.get("on_bootstrap_failed", None)
 
@@ -68,9 +74,12 @@ def load_torrent(bootstrap_address, port, **kwargs):
             reactor.stop()
 
     def start_dht_server(bootstrap_ip, bootstrap_port):
+        global_lock = Lock()
+        server_lock = Lock()
+
         server = Server(id=kwargs.get("node_id", generate_node_id()))
         server.listen(port)
-        server.bootstrap([(bootstrap_ip, bootstrap_port)]).addCallback(bootstrap_done, server)
+        server.bootstrap([(bootstrap_ip, bootstrap_port)]).addCallback(bootstrap_done, server, server_lock, global_lock)
 
     reactor.resolve(bootstrap_address[0]).addCallback(start_dht_server, bootstrap_address[1])
     reactor.run()
