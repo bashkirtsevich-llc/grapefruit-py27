@@ -1,6 +1,7 @@
 import requests
 import json
 from torrent import load_torrent
+from threading import Lock
 
 
 def __store_metadata(api_url, metadata, *args, **kwargs):
@@ -34,17 +35,19 @@ def __get_hash_iterator(api_url):
         else:
             return []
 
+    torrents_lock = Lock()
     # Local torrent items storage, using for closure from fetch_next_item
     torrents = []
 
     def fetch_next_item():
-        if not torrents:
-            torrents.extend(load_torrents())
+        with torrents_lock:
+            if not torrents:
+                torrents.extend(load_torrents())
 
-        if torrents:
-            return torrents.pop(0)
-        else:
-            return None
+            if torrents:
+                return torrents.pop(0)
+            else:
+                return None
 
     return fetch_next_item
 
