@@ -4,24 +4,6 @@ from torrent import load_torrent
 from threading import Lock
 
 
-def __store_metadata(api_url, metadata, *args, **kwargs):
-    try:
-        url = "{0}/add_torrent".format(api_url)
-        data = {"info_hash": metadata["info_hash"],
-                "metadata": json.dumps(
-                    {"name": metadata["name"],
-                     "files": map(lambda f: {"path": f["path"],
-                                             "length": f["length"]},
-                                  metadata["files"])})
-                }
-        requests.post(url, data=data)
-    except:  # Ignore any exceptions.
-        # TODO: Need to fix "error reading utf-8" error when invoke "json.dumps" function
-        pass
-    finally:
-        __index_next_info_hash(api_url, *args, **kwargs)
-
-
 def __get_hash_iterator(api_url):
     # This method return fetch method, who will reload torrent list, when he is empty
     def load_torrents():
@@ -52,23 +34,27 @@ def __get_hash_iterator(api_url):
     return fetch_next_item
 
 
-def __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash):
-    try_load_metadata(
-        info_hash=get_next_info_hash(),
-        schedule=1,  # Wait 1 second
-        on_torrent_loaded=lambda metadata: __store_metadata(api_url, metadata, try_load_metadata, get_next_info_hash),
-        on_torrent_not_found=lambda: __index_next_info_hash(api_url, try_load_metadata, get_next_info_hash)
-    )
-
-
-def __index_torrents(api_url, try_load_metadata):
-    iterator = __get_hash_iterator(api_url)
-
-    for _ in xrange(50):
-        __index_next_info_hash(api_url, try_load_metadata, iterator)
+def __store_metadata(api_url, metadata):
+    try:
+        url = "{0}/add_torrent".format(api_url)
+        data = {"info_hash": metadata["info_hash"],
+                "metadata": json.dumps(
+                    {"name": metadata["name"],
+                     "files": map(lambda f: {"path": f["path"],
+                                             "length": f["length"]},
+                                  metadata["files"])})
+                }
+        requests.post(url, data=data)
+    except:  # Ignore any exceptions.
+        # TODO: Need to fix "error reading utf-8" error when invoke "json.dumps" function
+        pass
 
 
 def start_indexer(web_server_api_url, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
+    info_hash_iterator = __get_hash_iterator(web_server_api_url)
+
     load_torrent(bootstrap_node_address, port,
                  node_id=node_id,
-                 on_bootstrap_done=lambda try_load_metadata: __index_torrents(web_server_api_url, try_load_metadata))
+                 workers_count=50,
+                 on_get_info_hash=lambda: info_hash_iterator(),
+                 on_got_metadata=lambda metadata: __store_metadata(web_server_api_url, metadata))

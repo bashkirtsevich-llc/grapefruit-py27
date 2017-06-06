@@ -51,7 +51,7 @@ class ConnectionLink:
 
 
 class ConnectionChain:
-    def __init__(self, peers, info_hash, peer_id, on_metadata_loaded, on_metadata_not_found, link_size=10):
+    def __init__(self, peers, info_hash, peer_id, on_metadata_loaded, on_metadata_not_found=None, link_size=10):
         self._on_metadata_loaded = on_metadata_loaded
         self._on_metadata_not_found = on_metadata_not_found
 
