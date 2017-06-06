@@ -86,8 +86,7 @@ def __start_dht_server(port, bootstrap_address, **kwargs):
 
 def load_torrent(bootstrap_address, port, **kwargs):
     """
-    :param bootstrap_host: DHT-bootstrap host name
-    :param bootstrap_port: DHT-bootstrap connection port
+    :param bootstrap_address: DHT-bootstrap host name and port
     :param port: Local DHT-server port
     :param kwargs: node_id, peer_id, on_bootstrap_done, on_bootstrap_failed
     :return: None
