@@ -1,3 +1,6 @@
+import logging
+import os
+
 import json
 
 from threading import Lock
@@ -14,6 +17,9 @@ from datetime import datetime
 
 
 def start_api_server(mongodb_uri, host, port):
+    logging.basicConfig(filename=os.devnull,
+                        level=logging.DEBUG)
+
     mongo_client = MongoClient(mongodb_uri)
     try:
         db = mongo_client.grapefruit

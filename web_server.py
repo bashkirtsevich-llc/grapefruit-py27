@@ -1,4 +1,3 @@
-import logging
 import os
 
 from web.web_server import start_web_server
@@ -8,9 +7,6 @@ from web_server_config import *
 from multiprocessing import Process
 
 if __name__ == '__main__':
-    logging.basicConfig(filename=os.devnull,
-                        level=logging.DEBUG)
-
     web = Process(
         target=start_web_server,
         kwargs=dict(

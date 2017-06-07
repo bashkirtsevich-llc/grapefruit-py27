@@ -1,4 +1,8 @@
 from __future__ import division
+
+import logging
+import os
+
 import urllib
 import math
 
@@ -17,6 +21,9 @@ from api import *
 
 
 def start_web_server(mongodb_uri, host, port):
+    logging.basicConfig(filename=os.devnull,
+                        level=logging.DEBUG)
+
     mongo_client = MongoClient(mongodb_uri)
     try:
         db_for_ui = mongo_client.grapefruit
