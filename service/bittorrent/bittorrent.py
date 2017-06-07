@@ -1,33 +1,24 @@
 from twisted.internet import reactor
-from protocol import BitTorrentFactory
+from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
+from protocol import BitTorrentProtocol
 
 
 class ConnectionLink:
     def __init__(self, peers, info_hash, peer_id, on_metadata_loaded, on_metadata_not_found):
+        self._info_hash = info_hash
+        self._peer_id = peer_id
         self._on_metadata_loaded = on_metadata_loaded
         self._on_metadata_not_found = on_metadata_not_found
 
-        # Need critical sections? Is "reactor" single thread?
-        self._connections = {}
         self._got_metadata = False
 
+        self._connections = {}
+
         for peer in peers:
-            self._register_connection(peer, info_hash, peer_id)
-
-    def _register_connection(self, peer, info_hash, peer_id):
-        factory = BitTorrentFactory(
-            info_hash=info_hash,
-            peer_id=peer_id,
-            on_metadata_loaded=lambda metadata, torrent_hash: self._on_got_metadata(peer, metadata, torrent_hash),
-            on_error=lambda error: self._forget_connection(peer)
-        )
-
-        self._connections[peer] = factory
+            self._connections[peer] = None
 
     def _forget_connection(self, peer):
-        if peer in self._connections:
-            del self._connections[peer]
-
+        if self._connections.pop(peer, None):
             if not self._connections and not self._got_metadata and callable(self._on_metadata_not_found):
                 self._on_metadata_not_found()
 
@@ -47,7 +38,20 @@ class ConnectionLink:
     def connect(self):
         for peer in self._connections.keys():
             peer_ip, peer_port = peer
-            reactor.connectTCP(peer_ip, peer_port, self._connections[peer], timeout=10)
+
+            point = TCP4ClientEndpoint(reactor, peer_ip, peer_port)
+
+            conn = connectProtocol(
+                point, BitTorrentProtocol(
+                    info_hash=self._info_hash,
+                    peer_id=self._peer_id,
+                    on_metadata_loaded=self._on_metadata_loaded,
+                    on_error=lambda error: self._forget_connection(peer)
+                )
+            )
+            conn.addCallback(lambda protocol: protocol.sendHandshake())
+
+            self._connections[peer] = conn
 
 
 class ConnectionChain:
