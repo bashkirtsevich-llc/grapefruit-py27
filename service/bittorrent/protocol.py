@@ -92,8 +92,8 @@ class BitTorrentProtocol(protocol.Protocol, policies.TimeoutMixin):
                         self.transport.loseConnection()
 
     def connectionMade(self):
-        # Set connection timeout in 3 seconds (after 10 seconds idle connection will be aborted)
-        self.setTimeout(3)
+        # Set connection timeout in 10 seconds (after 10 seconds idle connection will be aborted)
+        self.setTimeout(10)
 
     def dataReceived(self, data):
         self._buffer = buffer(self._buffer) + buffer(data)
