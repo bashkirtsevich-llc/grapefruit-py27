@@ -39,7 +39,7 @@ class ConnectionLink:
         for peer in self._connections.keys():
             peer_ip, peer_port = peer
 
-            point = TCP4ClientEndpoint(reactor, peer_ip, peer_port)
+            point = TCP4ClientEndpoint(reactor, peer_ip, peer_port, 10)
 
             conn = connectProtocol(
                 point, BitTorrentProtocol(
