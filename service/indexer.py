@@ -1,7 +1,6 @@
 import requests
 import json
 from torrent import load_torrent
-from threading import Lock
 
 
 def __get_hash_iterator(api_url):
@@ -9,7 +8,7 @@ def __get_hash_iterator(api_url):
     def load_torrents():
         url = "{0}/fetch_torrents_for_load".format(api_url)
 
-        api_response = requests.get(url, params={"limit": 50, "inc_access_count": True}).json()
+        api_response = requests.get(url, params={"limit": 10, "inc_access_count": True}).json()
 
         results = api_response["result"]
         if results and isinstance(results, list):
@@ -17,19 +16,17 @@ def __get_hash_iterator(api_url):
         else:
             return []
 
-    torrents_lock = Lock()
     # Local torrent items storage, using for closure from fetch_next_item
     torrents = []
 
     def fetch_next_item():
-        with torrents_lock:
-            if not torrents:
-                torrents.extend(load_torrents())
+        if not torrents:
+            torrents.extend(load_torrents())
 
-            if torrents:
-                return torrents.pop(0)
-            else:
-                return None
+        if torrents:
+            return torrents.pop(0)
+        else:
+            return None
 
     return fetch_next_item
 
