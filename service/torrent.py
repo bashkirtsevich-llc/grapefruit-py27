@@ -27,7 +27,7 @@ def __handle_peers(peers, info_hash, server, on_get_info_hash, on_got_metadata):
 
         reactor.callLater(1, chain.connect)
 
-    reactor.callLater(1, __get_peers_next, server, on_get_info_hash, on_got_metadata)
+    reactor.callLater(10, __get_peers_next, server, on_get_info_hash, on_got_metadata)
 
 
 def __get_peers_next(server, on_get_info_hash, on_got_metadata):
@@ -37,7 +37,7 @@ def __get_peers_next(server, on_get_info_hash, on_got_metadata):
         server.get_peers(info_hash).addCallback(
             __handle_peers, info_hash, server, on_get_info_hash, on_got_metadata)
     else:
-        reactor.callLater(1, __get_peers_next, server, on_get_info_hash, on_got_metadata)
+        reactor.callLater(10, __get_peers_next, server, on_get_info_hash, on_got_metadata)
 
 
 def __bootstrap_done(found, server, **kwargs):
@@ -53,7 +53,7 @@ def __bootstrap_done(found, server, **kwargs):
 
         if workers_count > 0 and callable(on_get_info_hash) and callable(on_got_metadata):
             for i in xrange(workers_count):
-                reactor.callLater(i, __get_peers_next, server, on_get_info_hash, on_got_metadata)
+                reactor.callLater(i * 10, __get_peers_next, server, on_get_info_hash, on_got_metadata)
     else:
         on_bootstrap_failed = kwargs.get("on_bootstrap_failed", None)
 
