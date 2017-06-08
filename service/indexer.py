@@ -52,6 +52,6 @@ def start_indexer(web_server_api_url, port, node_id=None, bootstrap_node_address
 
     load_torrent(bootstrap_node_address, port,
                  node_id=node_id,
-                 workers_count=50,
+                 workers_count=10,
                  on_get_info_hash=lambda: info_hash_iterator(),
                  on_got_metadata=lambda metadata: __store_metadata(web_server_api_url, metadata))
