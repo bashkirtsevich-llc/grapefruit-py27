@@ -24,7 +24,8 @@ def __handle_peers(peers, info_hash, server, on_get_info_hash, on_got_metadata):
                                 on_metadata_loaded=lambda metadata, torrent_hash:
                                 __torrent_loaded(metadata, torrent_hash, on_got_metadata),
                                 link_size=10)
-        chain.connect()
+
+        reactor.callLater(1, chain.connect)
 
     reactor.callLater(1, __get_peers_next, server, on_get_info_hash, on_got_metadata)
 
