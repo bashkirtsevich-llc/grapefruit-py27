@@ -55,11 +55,13 @@ class BitTorrentProtocol(protocol.Protocol, policies.TimeoutMixin):
                     metadata_size = hs_data["metadata_size"]
                     ut_metadata_id = hs_data["m"]["ut_metadata"]
 
-                    hs_response = {"e": 0,
-                                   "metadata_size": hs_data["metadata_size"],
-                                   "v": "\xce\xbcTorrent 3.4.9",
-                                   "m": {"ut_metadata": 1},
-                                   "reqq": 255}
+                    hs_response = {
+                        "e": 0,
+                        "metadata_size": hs_data["metadata_size"],
+                        "v": "\xce\xbcTorrent 3.4.9",
+                        "m": {"ut_metadata": 1},
+                        "reqq": 255
+                    }
 
                     # Response extended handshake
                     self.sendExtendedMessage(0, hs_response)
