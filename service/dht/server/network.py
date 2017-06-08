@@ -53,6 +53,24 @@ class Server(object):
         """
         return reactor.listenUDP(port, self.protocol, interface)
 
+    def inet_visible_ip(self):
+        """
+        Get the internet visible IP's of this node as other nodes see it.
+
+        Returns:
+            A `list` of IP's.  If no one can be contacted, then the `list` will be empty.
+        """
+
+        def handle(results):
+            ips = [result[1][0] for result in results if result[0]]
+            self.log.debug("other nodes think our ip is %s" % str(ips))
+            return ips
+
+        ds = []
+        for neighbor in self.bootstrappable_neighbors():
+            ds.append(self.protocol.stun(neighbor))
+        return defer.gatherResults(ds).addCallback(handle)
+
     def refresh_table(self):
         """
         Refresh buckets that haven't had any lookups in the last hour
@@ -112,24 +130,6 @@ class Server(object):
             ds[addr] = self.protocol.ping(addr, self.node.id)
         return deferred_dict(ds).addCallback(init_table)
 
-    def inet_visible_ip(self):
-        """
-        Get the internet visible IP's of this node as other nodes see it.
-
-        Returns:
-            A `list` of IP's.  If no one can be contacted, then the `list` will be empty.
-        """
-
-        def handle(results):
-            ips = [result[1][0] for result in results if result[0]]
-            self.log.debug("other nodes think our ip is %s" % str(ips))
-            return ips
-
-        ds = []
-        for neighbor in self.bootstrappable_neighbors():
-            ds.append(self.protocol.stun(neighbor))
-        return defer.gatherResults(ds).addCallback(handle)
-
     def get_peers(self, info_hash):
         """
         Get a key if the network has it.
@@ -140,11 +140,13 @@ class Server(object):
         # if this node has it, return it
         if self.storage.get(info_hash) is not None:
             return defer.succeed(self.storage.get(info_hash))
+
         node = Node(info_hash)
         nearest = self.protocol.router.findNeighbors(node)
         if len(nearest) == 0:
             self.log.warning("There are no known neighbors to get key %s" % info_hash)
             return defer.succeed(None)
+
         spider = ValueSpiderCrawl(self.protocol, node, nearest, self.ksize, self.alpha)
         return spider.find()
 
@@ -197,6 +199,19 @@ class Server(object):
         spider = NodeSpiderCrawl(self.protocol, key, nearest, self.ksize, self.alpha)
         return spider.find().addCallback(_store)
 
+    @staticmethod
+    def load_state(fname):
+        """
+        Load the state of this node (the alpha/ksize/id/immediate neighbors)
+        from a cache file with the given fname.
+        """
+        with open(fname, 'r') as f:
+            data = pickle.load(f)
+        s = Server(data['ksize'], data['alpha'], data['id'])
+        if len(data['neighbors']) > 0:
+            s.bootstrap(data['neighbors'])
+        return s
+
     def save_state(self, fname):
         """
         Save the state of this node (the alpha/ksize/id/immediate neighbors)
@@ -211,19 +226,6 @@ class Server(object):
             return
         with open(fname, 'w') as f:
             pickle.dump(data, f)
-
-    @staticmethod
-    def load_state(fname):
-        """
-        Load the state of this node (the alpha/ksize/id/immediate neighbors)
-        from a cache file with the given fname.
-        """
-        with open(fname, 'r') as f:
-            data = pickle.load(f)
-        s = Server(data['ksize'], data['alpha'], data['id'])
-        if len(data['neighbors']) > 0:
-            s.bootstrap(data['neighbors'])
-        return s
 
     def save_state_regularly(self, fname, frequency=600):
         """
