@@ -1,0 +1,1 @@
+mongo database_name "get_names.js" > "names.txt"
