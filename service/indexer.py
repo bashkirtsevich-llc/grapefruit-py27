@@ -8,7 +8,7 @@ def __get_hash_iterator(api_url):
     def load_torrents():
         url = "{0}/fetch_torrents_for_load".format(api_url)
 
-        api_response = requests.get(url, params={"limit": 10, "inc_access_count": True}).json()
+        api_response = requests.get(url, params={"limit": 50, "inc_access_count": True}).json()
 
         results = api_response["result"]
         if results and isinstance(results, list):
@@ -47,11 +47,13 @@ def __store_metadata(api_url, metadata):
         pass
 
 
-def start_indexer(web_server_api_url, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881)):
+def start_indexer(web_server_api_url, port, node_id=None, bootstrap_node_address=("router.bittorrent.com", 6881),
+                  time_to_live=0):
     info_hash_iterator = __get_hash_iterator(web_server_api_url)
 
     load_torrent(bootstrap_node_address, port,
                  node_id=node_id,
-                 workers_count=10,
+                 workers_count=50,
+                 time_to_live=time_to_live,
                  on_get_info_hash=lambda: info_hash_iterator(),
                  on_got_metadata=lambda metadata: __store_metadata(web_server_api_url, metadata))
