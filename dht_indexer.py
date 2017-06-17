@@ -20,7 +20,7 @@ def start_indexers(web_server_api_url, indexers_info):
             "port": indexer_info["port"],
             "node_id": indexer_info["node_id"],
             "bootstrap_node_address": indexer_info["bootstrap"],
-            "time_to_live": 30 * 60  # Stop process after 30 minutes
+            "time_to_live": 20 * 60  # Stop process after 20 minutes
         }
 
         t = Thread(target=watchdog_thread, kwargs=kwargs)
