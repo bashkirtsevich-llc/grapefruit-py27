@@ -208,3 +208,37 @@ Known bittorrent bootstrap nodes:
 * router.bittorrent.com:6881
 * dht.transmissionbt.com:6881
 * router.utorrent.com:6881
+### “tools” folder
+#### get_names.js
+Extract all info hashes and torrent names:
+```javascript
+db.torrents.createIndex({"name": 1}, {name: "name"})
+
+db.torrents.find({"name": {$exists: true}}).sort({"name": 1}).forEach(function(doc){
+    print("magnet:?xt=urn:btih:" + doc.info_hash, doc.name)
+})
+```
+#### get_sizes.js
+Get size  of files in each torrent:
+```javascript
+db.torrents.find({"files": {$exists: true}}).toArray.forEach(function(doc){
+    size = doc.files.reduce(function(total, item) {
+        return total + item.length
+    }, 0)
+    print(doc.info_hash, size)
+})
+
+```
+#### get_total_torrents_size.js
+Calculate total torrents files sizes:
+```javascript
+size = db.torrents.find({"files": {$exists: true}}).toArray().reduce(
+    function(total, doc) {
+        return total + doc.files.reduce(
+            function(total, item) {
+                return total + item.length
+            }, 0)
+    }, 0)
+
+print(size)
+```
