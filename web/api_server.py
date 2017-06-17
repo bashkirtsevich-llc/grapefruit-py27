@@ -40,7 +40,10 @@ def start_api_server(mongodb_uri, host, port):
         torrents = db.torrents
         torrents_indexes = torrents.index_information()
 
-        for index_info in ({"name": "fulltext_index", "keys": [("$**", TEXT)], "weights": {"name": 3, "path": 2},
+        for index_info in ({"name": "fulltext", "keys": [("name", TEXT),
+                                                         ("info_hash", TEXT),
+                                                         ("files.path", TEXT)],
+                            "weights": {"name": 99999, "info_hash": 99999, "files.path": 1},
                             "default_language": "english"},
                            {"name": "info_hash", "keys": [("info_hash", ASCENDING)], "unique": True},
                            {"name": "access_count", "keys": [("access_count", ASCENDING)]},

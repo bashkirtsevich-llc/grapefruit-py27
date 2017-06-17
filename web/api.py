@@ -21,7 +21,7 @@ def db_search_torrents(db, query, fields, offset=0, limit=0):
             {"name": {"$exists": True}},
             {"files": {"$exists": True}}]},
         projection=projection,
-        sort=[("score", {"$meta": "textScore"})]
+        sort=[("score", {"$meta": "textScore"}), ("timestamp", DESCENDING)]
     )
 
     if cursor:
