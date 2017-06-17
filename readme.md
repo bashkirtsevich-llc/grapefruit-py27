@@ -95,12 +95,12 @@ DHT_INDEXERS_INFO = map(lambda port: {"port": port,
     "files.path": "text"
 },
 {
-    weights: {
+    "weights": {
         "name": 99999,
         "info_hash": 99999,
         "files.path": 1
     },
-    name: "fulltext"
+    "name": "fulltext"
 }
 ```
 ### “crawler_route” collection
@@ -131,7 +131,7 @@ This collection contains routing tables for spyder crawler. Using for quick boot
 * Structure
 ```json
 {  
-   "timestamp" : ISODate("2017-04-28T16:11:52.405Z"),
+   "timestamp" : "2017-04-28T16:11:52.405Z",
    "info_hash" : "20b15ed501c738dab5d96abe0f22a44e1de75b9a"
 }
 ```
