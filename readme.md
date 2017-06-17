@@ -87,25 +87,21 @@ DHT_INDEXERS_INFO = map(lambda port: {"port": port,
    "info_hash":"7752b63e7b62f3f13d4a070a0522196e7142fbe6"
 }
 ```
-* Full text wildcard index:
+* Full text search index:
 ``` json
-{  
-   "v":2,
-   "key":{  
-      "_fts":"text",
-      "_ftsx":1
-   },
-   "name":"fulltext_index",
-   "ns":"grapefruit.torrents",
-   "weights":{  
-      "$**":1,
-      "name":3,
-      "path":2
-   },
-   "default_language":"english",
-   "language_override":"language",
-   "textIndexVersion":3
-}                                      
+{
+    "name": "text",
+    "info_hash": "text",
+    "files.path": "text"
+},
+{
+    weights: {
+        "name": 99999,
+        "info_hash": 99999,
+        "files.path": 1
+    },
+    name: "fulltext"
+}
 ```
 ### “crawler_route” collection
 * Structure
