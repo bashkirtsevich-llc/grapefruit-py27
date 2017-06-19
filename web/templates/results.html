@@ -23,7 +23,7 @@
                 {% for file in result.files %}
                 <li class="file">
                   <span class="file-icon">
-                    <i class="fa fa-file-archive-o"></i>
+                    <i class="fa {{ file.icon }}"></i>
                   </span>
                   <span class="file-name">
                     {{ file.name }}
