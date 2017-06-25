@@ -1,4 +1,5 @@
 echo "start web server"
+python api_server.py &
 python web_server.py &
 echo "wait 5 seconds"
 sleep 5
