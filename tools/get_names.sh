@@ -1,1 +1,1 @@
-mongo database_name "get_names.js" > "names.txt"
+mongo grapefruit --quiet "get_names.js" > "names.txt"
