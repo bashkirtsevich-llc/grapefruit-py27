@@ -95,7 +95,7 @@ def start_web_server(mongodb_uri, host, port):
 
                 return render_results("/search", query, page, results, results_count, elapsed_time)
             else:
-                return redirect("/search/{q}".format(q=request.args.get("q")))
+                return redirect(u"/search/{0}".format(request.args.get("q")))
 
         @app.route("/latest", defaults={"page": 1})
         @app.route("/latest/<int:page>")
