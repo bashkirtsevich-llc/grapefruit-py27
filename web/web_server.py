@@ -80,11 +80,10 @@ def start_web_server(mongodb_uri, host, port):
 
             return render_template("results.html", **arguments)
 
-        @app.route("/search")
-        def search():
-            query = request.args.get("q")
-            page = max(int(request.args.get("p", default=1)), 1)
-
+        @app.route("/search", defaults={"query": None, "page": 1})
+        @app.route("/search/<query>", defaults={"page": 1})
+        @app.route("/search/<query>/<int:page>")
+        def search(query, page):
             if query:
                 results_count, results, elapsed_time = db_search_torrents(
                     db_for_ui,
@@ -93,14 +92,14 @@ def start_web_server(mongodb_uri, host, port):
                     limit=results_per_page,
                     offset=(page - 1) * results_per_page
                 )
+
                 return render_results("/search", query, page, results, results_count, elapsed_time)
             else:
-                return redirect("/")
+                return redirect("/search/{q}".format(q=request.args.get("q")))
 
-        @app.route("/latest")
-        def latest():
-            page = max(int(request.args.get("p", default=1)), 1)
-
+        @app.route("/latest", defaults={"page": 1})
+        @app.route("/latest/<int:page>")
+        def latest(page):
             results_count, results, elapsed_time = db_get_last_torrents(
                 db_for_ui,
                 fields=["name", "files", "info_hash"],
@@ -110,17 +109,15 @@ def start_web_server(mongodb_uri, host, port):
 
             return render_results("/latest", "", page, results, min(results_count, 100), elapsed_time)
 
-        @app.route("/details")
-        def details():
-            query = request.args.get("q")
-            info_hash = request.args.get("t")
-
+        @app.route("/torrent", defaults={"info_hash": None})
+        @app.route("/torrent/<info_hash>")
+        def torrent(info_hash):
             if info_hash:
                 result, _ = db_get_torrent_details(db_for_ui, info_hash)
 
                 if result:
                     arguments = {
-                        "query": query,
+                        "query": result["name"],
                         "title": result["name"],
                         "size": get_files_size(result["files"]),
                         "info_hash": result["info_hash"],

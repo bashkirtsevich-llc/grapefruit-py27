@@ -1,11 +1,11 @@
 <li class="button">
   {% if button_disabled %}
     {% if button_title %}
-      <a href="{{ source_url }}?q={{ query }}/#" class="disabled">{{ button_title }}</a>
+      <a href="{{ source_url }}/#" class="disabled">{{ button_title }}</a>
     {% else %}
       <strong>{{ page_index }}</strong>
     {% endif %}
   {% else %}
-    <a href="{{ source_url }}?{% if query %}q={{ query }}&{% endif %}p={{ page_index }}">{% if button_title %}{{ button_title }}{% else %}{{ page_index }}{% endif %}</a>
+    <a href="{{ source_url }}{% if query %}/{{ query }}{% endif %}/{{ page_index }}">{% if button_title %}{{ button_title }}{% else %}{{ page_index }}{% endif %}</a>
   {% endif %}
 </li>
