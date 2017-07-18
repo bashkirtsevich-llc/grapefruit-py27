@@ -13,6 +13,8 @@ from flask import render_template
 from flask import request
 from flask_pymongo import PyMongo
 
+from schema import deploy_schema
+
 from markupsafe import Markup
 
 from utils import *
@@ -22,6 +24,8 @@ from api import *
 def start_web_server(mongodb_uri, host, port):
     logging.basicConfig(filename=os.devnull,
                         level=logging.DEBUG)
+
+    deploy_schema(mongodb_uri)
 
     app = Flask(__name__, static_url_path="")
     app.config["MONGO_URI"] = mongodb_uri
