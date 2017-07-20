@@ -137,8 +137,9 @@ This collection contains routing tables for spyder crawler. Using for quick boot
 ```
 This collection can be usefull for analytics.
 ## Database migration
+### Migration from version 1.3
 For migrate from older database to newest, you can execute `tools/migrate_from_1.3.js` script in mongo shell.
-### Manual migration.
+#### Manual migration.
 Switch to database:
 ```javascript
 use grapefruit
@@ -180,6 +181,58 @@ db.hashes.distinct("info_hash").forEach(function(info_hash) {
         db.torrents.insert({"info_hash": info_hash})
 })
 
+```
+### Migration from version 1.5
+For migrate from older database to newest, you can execute `tools/migrate_from_1.5.js` script in mongo shell.
+#### Manual migration.
+Switch to database:
+```javascript
+use grapefruit
+```
+Rename “hashes” collection:
+```javascript
+db.hashes.renameCollection("hashes_old")
+```
+Create new “hashes” collections filled by info_hashes from “torrents” collection:
+```javascript
+db.torrents.find().forEach(function(doc){
+    db.hashes.insert({
+        "info_hash": doc.info_hash,
+        "access_count": NumberInt("access_count" in doc ? doc.access_count : 0),
+        "loaded": "name" in doc
+    })
+})
+```
+Add hashes, whitch not exists in “hashes_old” collection:
+```javascript
+db.hashes_old.distinct("info_hash").forEach(function (info_hash) {
+    if (db.torrents.count({"info_hash": info_hash}) == 0)
+        db.hashes.insert({
+            "info_hash": info_hash,
+            "access_count": NumberInt(0),
+            "loaded": false
+        })
+})
+```
+Create indexes for new collection:
+```javascript
+db.hashes.createIndex({"info_hash": 1}, {name: "info_hash", unique: true})
+db.hashes.createIndex({"access_count": 1}, {name: "access_count"})
+db.hashes.createIndex({"loaded": 1}, {name: "loaded"})
+```
+Drop useless old collection “hashes_old”:
+```javascript
+db.hashes_old.drop()
+```
+Remove unloaded torrents from “torrents” collection:
+```javascript
+db.torrents.remove({"name": {$exists: false}})
+```
+Unset “access_count” field in “torrents” collection
+```javascript
+db.torrents.find().forEach(function(doc){
+    db.torrents.update({"info_hash": doc.info_hash}, {$unset: {"access_count": ""}})
+})
 ```
 ## Internals
 ### “service” folder
