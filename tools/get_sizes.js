@@ -1,4 +1,4 @@
-db.torrents.find({"files": {$exists: true}}).toArray.forEach(function(doc){
+db.torrents.find().toArray.forEach(function(doc){
     size = doc.files.reduce(function(total, item) {
         return total + item.length
     }, 0)
