@@ -634,6 +634,7 @@ nav[role="navigation"] {
 }
 .footer {
     position: absolute;
+    left: 0;
     bottom: 0;
     width: 100%;
     padding: 10px 0;
@@ -648,7 +649,7 @@ nav[role="navigation"] {
 }
 .footer .disclaimer {
     line-height: 16px;
-    margin: 0;
+    margin: 1% 10% 1% 10%;
 }
 .torrent-info {
     font-size: 14px;
@@ -981,7 +982,6 @@ div.mgline:hover .mctitle a {
         padding: 0;
         font-size: 12px;
         line-height: 18px;
-        height: 50px;
     }
     .footer-content {
         line-height: 40px;
