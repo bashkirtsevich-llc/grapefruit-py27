@@ -10,9 +10,9 @@ from flask import jsonify
 from flask import request
 from flask_pymongo import PyMongo
 
-from schema import deploy_schema
+from .schema import deploy_schema
 
-from api import *
+from .api import *
 
 from datetime import datetime
 
