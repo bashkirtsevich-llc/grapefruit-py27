@@ -68,7 +68,7 @@ def start_web_server(mongodb_uri, host, port):
             "source_url": source_url,
             "query": query,
             "page": page,
-            "total_pages": int(math.ceil(results_count / results_per_page)),
+            "total_pages": int(math.ceil(float(results_count) / results_per_page)),
             "total_count": results_count,
             "time_elapsed": round(elapsed_time, 3),
             "results": map(lambda item: {
