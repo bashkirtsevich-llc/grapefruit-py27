@@ -106,7 +106,7 @@ def start_web_server(mongodb_uri, host, port):
             mongo.db,
             fields=["name", "files", "info_hash"],
             limit=results_per_page,
-            offset=(page - 1) * results_per_page
+            offset=(min(page, 10) - 1) * results_per_page
         )
 
         return render_results("/latest", "", page, results, min(results_count, 100), elapsed_time)
