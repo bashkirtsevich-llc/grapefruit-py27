@@ -3,7 +3,7 @@ from __future__ import division
 import logging
 import os
 
-import urllib
+import urllib.parse
 import math
 
 from flask import Flask
@@ -13,12 +13,12 @@ from flask import render_template
 from flask import request
 from flask_pymongo import PyMongo
 
-from schema import deploy_schema
+from .schema import deploy_schema
 
 from markupsafe import Markup
 
-from utils import *
-from api import *
+from .utils import *
+from .api import *
 
 
 def start_web_server(mongodb_uri, host, port):
@@ -39,7 +39,7 @@ def start_web_server(mongodb_uri, host, port):
         if type(s) == 'Markup':
             s = s.unescape()
         s = s.encode('utf8')
-        s = urllib.quote_plus(s)
+        s = urllib.parse.quote_plus(s)
         return Markup(s)
 
     # Error pages responding
