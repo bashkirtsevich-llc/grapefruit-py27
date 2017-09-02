@@ -1,1 +1,1 @@
-python api_server.py &
+python3 web/api_server.py config/api_server.json &

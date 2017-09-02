@@ -1,0 +1,5 @@
+{
+  "mongodb_uri": "mongodb://localhost:27017/grapefruit",
+  "host": "127.0.0.1",
+  "port": 5001
+}

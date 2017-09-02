@@ -1,1 +1,1 @@
-python web_server.py &
+python3 web/web_server.py config/web_server.json &

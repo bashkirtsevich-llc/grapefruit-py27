@@ -17,7 +17,7 @@ from .api import *
 from datetime import datetime
 
 
-def start_api_server(mongodb_uri, host, port):
+def main(mongodb_uri, host, port):
     logging.basicConfig(filename=os.devnull,
                         level=logging.DEBUG)
 
@@ -141,4 +141,22 @@ def start_api_server(mongodb_uri, host, port):
                 "message": "missed one of this arguments: \"buckets\", \"local_node_id\", \"local_node_host\", \"local_node_port\""}
             })
 
-    app.run(host=host, port=port, threaded=True)
+    app.run(host=host, port=port)
+
+
+if __name__ == '__main__':
+    import sys
+    import json
+
+    if len(sys.argv) > 1:
+        with open(sys.argv[1]) as config_file:
+            params = json.load(config_file)
+
+        main(**params)
+    else:
+        example = json.dumps({
+            "mongodb_uri": "mongodb://localhost:27017/grapefruit",
+            "host": "127.0.0.1",
+            "port": 5000
+        })
+        print("Usage: python3 api_server.py config.json\r\n\r\nconfig.json structure: {0}".format(example))
